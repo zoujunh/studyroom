@@ -20,6 +20,11 @@ server/dist
 .env
 server/.env
 
+# Audio files (too large for git)
+public/sounds/scenes/*.wav
+public/sounds/scenes/*.mp3
+public/sounds/scenes/*.m4a
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
