@@ -56,7 +56,8 @@ body {
   min-height: 100dvh;
   min-height: 100vh;
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
   background: var(--bg-primary);
   color: var(--text-primary);
   /* 环境光晕，为玻璃提供深度层次 */
@@ -481,21 +482,6 @@ button {
   background: rgba(0, 0, 0, 0.06);
 }
 
-.volume-slider {
-  width: 100%;
-  accent-color: #ffffff;
-}
-
-.volume-slider::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.volume-slider::-webkit-slider-thumb {
-  margin-top: -6px;
-}
-
 .goal-input {
   display: flex;
   align-items: center;
@@ -883,6 +869,10 @@ button {
 /* Mobile (max-width: 768px) */
 @media (max-width: 768px) {
   /* Enable body scrolling on mobile */
+  html {
+    overflow-y: auto;
+  }
+
   body {
     overflow-y: auto;
     overflow-x: hidden;
@@ -1045,6 +1035,53 @@ button {
 
 
 
+/* 自定义滚动条 - 玻璃风格 */
+.glass-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.glass-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.glass-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.glass-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Firefox */
+.glass-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Global scrollbar - glass style */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
 /* 防止滑动越界 */
 html {
   overscroll-behavior: none;
@@ -1167,6 +1204,125 @@ input[type="range"]::-moz-range-thumb {
   border: none;
 }
 
+/* Collapsed control button */
+.control-collapsed-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  animation: gentle-float 3s ease-in-out infinite;
+}
 
+.control-collapsed-btn:hover {
+  animation: none;
+  transform: translateY(-2px);
+}
 
+.control-collapsed-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Ripple container */
+.ripple-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ripple-container::after {
+  content: '';
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  animation: ripple-breathe 2.5s ease-out infinite;
+  pointer-events: none;
+}
+
+.ripple-container.no-ripple::after {
+  display: none;
+}
+
+@keyframes ripple-breathe {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Photo selector scrollbar */
+.photo-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.photo-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.photo-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+.photo-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.photo-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* StudyRoom scrollbar */
+.study-room ::-webkit-scrollbar {
+  width: 4px;
+}
+.study-room ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.study-room ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+.study-room ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 背景选择器滚动条 */
+.bg-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.bg-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.bg-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+.bg-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.bg-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
 

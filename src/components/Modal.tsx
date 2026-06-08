@@ -27,7 +27,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
       />
       {/* 弹窗主体 */}
       <div
-        className={`glass-panel relative ${sizeClasses[size]} w-[calc(100%-2rem)] p-6 animate-fade-in-up`}
+        className={`glass-panel glass-scroll relative ${sizeClasses[size]} w-[calc(100%-2rem)] p-6 animate-fade-in-up`}
       >
         {/* 头部 */}
         {title && (

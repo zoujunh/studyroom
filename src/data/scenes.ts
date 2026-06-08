@@ -43,13 +43,42 @@ export const durations = [25, 45, 90]
 
 // 每个场景的可选背景图
 export const sceneBackgrounds: Record<string, string[]> = {
-  morning: ['/images/morning/scene-morning.jpg'],
-  'rainy-cafe': ['/images/rainy-cafe/scene-rainy.jpg'],
-  library: ['/images/library/scene-library.jpg'],
+  morning: [
+    '/images/morning/scene-morning.jpg',
+    '/images/morning/annie-spratt-quzrYrc4YYc-unsplash.jpg',
+    '/images/morning/annie-spratt-TAH-tZpuow4-unsplash.jpg',
+    '/images/morning/jun-ren-uWodkAzIXYM-unsplash.jpg',
+    '/images/morning/paulina-k-XYf5sOX7p6Y-unsplash.jpg',
+    '/images/morning/petri-r-AoCiNXiiEIU-unsplash.jpg',
+  ],
+  'rainy-cafe': [
+    '/images/rainy-cafe/scene-rainy.jpg',
+    '/images/rainy-cafe/alex-he-QCOMGD9YqFI-unsplash.jpg',
+    '/images/rainy-cafe/allison-christine-SEbQSYozn7c-unsplash.jpg',
+    '/images/rainy-cafe/freya-song-dq7-C_Qcy5A-unsplash.jpg',
+    '/images/rainy-cafe/gil-ribeiro-FhR46F3l9KQ-unsplash.jpg',
+    '/images/rainy-cafe/loren-gu-_bT-oNYP5Wk-unsplash.jpg',
+    '/images/rainy-cafe/ning-shi-_cqRjq4rp0M-unsplash.jpg',
+    '/images/rainy-cafe/rhendi-rukmana-H0lTOg1t_0o-unsplash.jpg',
+    '/images/rainy-cafe/se-tsuchiya-dHHEwqWrnO0-unsplash.jpg',
+  ],
+  library: [
+    '/images/library/scene-library.jpg',
+    '/images/library/anastasia-meraki-HsHybQQHgWo-unsplash.jpg',
+    '/images/library/ashutosh-gupta-tcTYO6YyazY-unsplash.jpg',
+    '/images/library/ashutosh-gupta-vYNsRnUhjIk-unsplash.jpg',
+    '/images/library/david-yao-Bt9ueiVZ5u0-unsplash.jpg',
+    '/images/library/rocio-perera-whCTS6_zigo-unsplash.jpg',
+    '/images/library/ziyao-xiong-DwIjFr7twC0-unsplash.jpg',
+  ],
   ocean: [
     '/images/ocean/scene-ocean.jpg',
     '/images/ocean/florian-7fw2L_Vj7zg-unsplash.jpg',
+    '/images/ocean/gio-l-45OUvpIMchM-unsplash.jpg',
+    '/images/ocean/luo-jin-hong-IWvdmqW1wL8-unsplash.jpg',
     '/images/ocean/omar-IyvAqGd5Hd0-unsplash.jpg',
     '/images/ocean/steve-adams-73HEIvEOL4k-unsplash.jpg',
+    '/images/ocean/steve-jewett-7NDJ7sWWOLQ-unsplash.jpg',
+    '/images/ocean/ty-crump-wFMGYfTMlgo-unsplash.jpg',
   ],
 }

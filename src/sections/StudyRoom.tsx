@@ -1,4 +1,5 @@
-import { ArrowLeft, BookOpen, Check, Coffee, Image, Maximize2, Minimize2, Pause, Phone, Play, RefreshCw, RotateCcw, Target, Utensils, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowLeft, BookOpen, Check, ChevronDown, ChevronUp, Coffee, Image, Maximize2, Minimize2, Pause, Phone, Play, RefreshCw, RotateCcw, Target, Utensils, Volume2, VolumeX, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { GlassSlider } from '../components/GlassSlider'
 import { Modal } from '../components/Modal'
@@ -42,6 +43,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
   const [tempGoal, setTempGoal] = useState('')
 
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [controlExpanded, setControlExpanded] = useState(true)
   const [customBg, setCustomBg] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem(`scene-bg-${scene.id}`)
@@ -173,7 +175,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
   }
 
   return (
-    <section ref={containerRef} className="study-room relative h-full overflow-hidden bg-black">
+      <section ref={containerRef} className="study-room relative h-full overflow-x-hidden bg-black">
       <img src={customBg || scene.image} alt="" className="absolute inset-0 h-full w-full scale-[1.02] object-cover slow-zoom" />
       {/* 清晰背景 */}
       <div className="absolute inset-0 bg-black/35" />
@@ -263,61 +265,100 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
         </div>
       </div>
 
-      {/* 底部控制条 - 三组布局 */}
-      <div className="absolute bottom-4 left-1/2 z-20 flex h-10 w-[calc(100%-1rem)] -translate-x-1/2 items-center justify-between rounded-full px-3 text-xs text-white/56 md:bottom-6 md:h-11 md:w-[min(48rem,calc(100%-2rem))] md:px-4" style={{ background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(10px)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {/* 左边：音量 */}
-        <div className="flex items-center h-8 md:h-9">
-          <Volume2 className="h-4 w-4 text-white/40" />
-          <div className="w-1 md:w-2" />
-          <span className="hidden text-white/40 text-sm md:inline">背景音</span>
-          <div className="w-2 md:w-3" />
-          <div style={{ width: '80px' }} className="md:w-[120px]">
-            <GlassSlider
-              value={ambientVolume}
-              onChange={setAmbientVolume}
-              showValue={false}
-            />
-          </div>
-        </div>
+      {/* 底部控制条 - 收起/展开 */}
+      <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 md:bottom-6">
+        <AnimatePresence mode="wait">
+          {controlExpanded ? (
+            <motion.div
+              key="expanded"
+              className="flex h-10 items-center justify-between gap-4 overflow-visible rounded-full px-3 text-xs text-white/56 md:h-11 md:w-[min(52rem,calc(100%-2rem))] md:px-4"
+              style={{
+                background: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(10px)',
+                paddingBottom: 'env(safe-area-inset-bottom)',
+              }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            >
+              {/* Left: Volume */}
+              <div className="flex items-center gap-2 pl-2">
+                <Volume2 className="h-4 w-4 text-white/50" />
+                <div className="w-[100px]">
+                  <GlassSlider
+                    value={ambientVolume}
+                    onChange={setAmbientVolume}
+                    showValue={false}
+                  />
+                </div>
+              </div>
 
-        {/* 分隔符 */}
-        <div className="h-4 w-px bg-white/20" />
+              {/* 分隔符 */}
+              <div className="h-5 w-px bg-white/15" />
 
-        {/* 中间：静音、混音、暂停、重置 */}
-        <div className="flex items-center gap-2 md:gap-3">
-          <button
-            className={`control-button-sm ${sound.isPlaying ? 'text-emerald-300/70' : 'text-white/30'}`}
-            type="button"
-            onClick={toggleSound}
-          >
-            {sound.isPlaying ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-            <span className="hidden md:inline">{sound.isPlaying ? '音效' : '静音'}</span>
-          </button>
+              {/* 中间：静音、混音、暂停、重置 */}
+              <div className="flex items-center gap-2 md:gap-3">
+                <button
+                  className={`control-button-sm ${sound.isPlaying ? 'text-emerald-300/70' : 'text-white/30'}`}
+                  type="button"
+                  onClick={toggleSound}
+                >
+                  {sound.isPlaying ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                  <span className="hidden md:inline">{sound.isPlaying ? '音效' : '静音'}</span>
+                </button>
 
-          <button className="control-button-sm" type="button" onClick={timer.isRunning ? pause : resume}>
-            {timer.isRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-            <span className="hidden md:inline">{timer.isRunning ? '暂停' : '继续'}</span>
-          </button>
-          <button className="control-button-sm" type="button" onClick={timer.reset}>
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">重置</span>
-          </button>
-        </div>
+                <button className="control-button-sm" type="button" onClick={timer.isRunning ? pause : resume}>
+                  {timer.isRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                  <span className="hidden md:inline">{timer.isRunning ? '暂停' : '继续'}</span>
+                </button>
+                <button className="control-button-sm" type="button" onClick={timer.reset}>
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">重置</span>
+                </button>
+              </div>
 
-        {/* 分隔符 */}
-        <div className="h-4 w-px bg-white/20" />
+              {/* 分隔符 */}
+              <div className="h-5 w-px bg-white/15" />
 
-        {/* 右边：休息、结束学习 */}
-        <div className="flex items-center gap-2 md:gap-3">
-          <button className="control-button-sm" type="button" onClick={handleBreak}>
-            <Coffee className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">休息</span>
-          </button>
-          <button className="control-button-sm hover:text-red-300" type="button" onClick={endStudy}>
-            <X className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">结束</span>
-          </button>
-        </div>
+              {/* 右边：休息、结束学习、收起 */}
+              <div className="flex items-center gap-2 md:gap-3 pr-3">
+                <button className="control-button-sm" type="button" onClick={handleBreak}>
+                  <Coffee className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">休息</span>
+                </button>
+                <button className="control-button-sm hover:text-red-300" type="button" onClick={endStudy}>
+                  <X className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">结束</span>
+                </button>
+                <button
+                  className="control-button-sm flex items-center gap-1.5 text-white/40 hover:text-white/70"
+                  type="button"
+                  onClick={() => setControlExpanded(false)}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="collapsed"
+              className="ripple-container"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            >
+              <button
+                className="control-collapsed-btn"
+                type="button"
+                onClick={() => setControlExpanded(true)}
+              >
+                <ChevronUp className="h-5 w-5 text-white/80" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
 

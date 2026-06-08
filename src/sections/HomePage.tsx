@@ -53,7 +53,7 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
   }
 
   return (
-    <section className="home-scene relative h-full overflow-hidden" style={{ minHeight: '100dvh' }}>
+    <section className="home-scene relative min-h-screen md:h-full md:overflow-hidden overflow-hidden">
       {/* 背景图 */}
       <div className="absolute inset-0 z-0">
         <img src={backgroundPhoto} alt="" className="h-full w-full object-cover" />
@@ -120,7 +120,7 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
       </header>
 
       {/* 主内容区 */}
-      <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
+      <div className="relative z-10 flex min-h-[60vh] md:min-h-0 md:h-full flex-col items-center justify-center px-6 text-center">
         <h1 className="hero-title-new">
           开启你的清晨自习室
         </h1>

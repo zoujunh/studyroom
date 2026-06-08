@@ -34,12 +34,12 @@ export function StudyApp() {
   }
 
   return (
-    <main className="h-screen w-full overflow-hidden bg-[#10100f] text-white">
+    <main className="w-full bg-[#10100f] text-white min-h-screen md:h-screen md:overflow-hidden overflow-y-auto overflow-x-hidden">
       <AnimatePresence mode="wait">
         {view === 'login' && (
           <motion.div
             key="login"
-            className="h-full"
+            className="min-h-full md:h-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -55,7 +55,7 @@ export function StudyApp() {
         {view === 'register' && (
           <motion.div
             key="register"
-            className="h-full"
+            className="min-h-full md:h-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -71,7 +71,7 @@ export function StudyApp() {
         {view === 'home' && (
           <motion.div
             key="home"
-            className="h-full"
+            className="min-h-full md:h-full"
             initial={{ opacity: 0, scale: 0.985 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.015 }}
@@ -87,7 +87,7 @@ export function StudyApp() {
         {view === 'setup' && (
           <motion.div
             key="setup"
-            className="h-full"
+            className="min-h-full md:h-full"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
@@ -107,7 +107,7 @@ export function StudyApp() {
         {view === 'room' && (
           <motion.div
             key="room"
-            className="h-full"
+            className="min-h-full md:h-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
