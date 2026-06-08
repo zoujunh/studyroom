@@ -423,7 +423,10 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
         title="更换背景图"
         size="md"
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div
+          className="bg-scroll grid grid-cols-2 gap-3 overflow-y-auto pr-1"
+          style={{ maxHeight: '280px' }}
+        >
           {(sceneBackgrounds[scene.id] || []).map((bg) => (
             <button
               key={bg}
