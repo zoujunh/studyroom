@@ -53,7 +53,7 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
   }
 
   return (
-    <section className="home-scene relative h-full overflow-y-auto" style={{ minHeight: '100dvh' }}>
+    <section className="home-scene relative h-full overflow-hidden" style={{ minHeight: '100dvh' }}>
       {/* 背景图 */}
       <div className="absolute inset-0 z-0">
         <img src={backgroundPhoto} alt="" className="h-full w-full object-cover" />

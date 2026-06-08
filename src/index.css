@@ -438,11 +438,6 @@ button {
   z-index: 0;
 }
 
-.scene-card > div {
-  position: relative;
-  z-index: 1;
-}
-
 .scene-card:hover {
   opacity: 1;
 }
@@ -832,9 +827,11 @@ button {
 
 /* 底部Footer */
 .footer-new {
-  position: relative;
-  margin-top: auto;
-  z-index: 5;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -885,6 +882,33 @@ button {
 
 /* Mobile (max-width: 768px) */
 @media (max-width: 768px) {
+  /* Enable body scrolling on mobile */
+  body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Containers: min-height on mobile so content can scroll */
+  .home-scene,
+  .setup-page,
+  .study-room {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  /* Scrollbar styling (mobile only) */
+  body::-webkit-scrollbar {
+    width: 4px;
+  }
+  body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  body::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+  }
+
   /* Typography */
   html {
     font-size: 14px;
@@ -1143,26 +1167,6 @@ input[type="range"]::-moz-range-thumb {
   border: none;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-}
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-}
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* Firefox scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-}

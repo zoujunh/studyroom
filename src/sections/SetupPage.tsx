@@ -19,7 +19,7 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
   const [customDuration, setCustomDuration] = useState('')
 
   return (
-    <section className="relative h-full overflow-y-auto overflow-x-hidden p-3 md:p-5" style={{ minHeight: '100dvh' }}>
+    <section className="setup-page relative h-full overflow-hidden overflow-x-hidden p-3 md:p-5" style={{ minHeight: '100dvh' }}>
       <img src={scene.image} alt="" className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500" />
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(6,8,10,0.62),rgba(41,36,31,0.42)_45%,rgba(8,10,14,0.68))] backdrop-blur-[2px]" />
       <div className="noise-layer" />
@@ -46,7 +46,7 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
               >
                 <img src={item.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-2 left-4 md:bottom-4 md:left-4">
+                <div className="absolute bottom-4 left-4">
                   <div className="text-sm font-semibold text-white md:text-base">{item.name}</div>
                   <div className="mt-1 text-xs text-white/70">{item.description}</div>
                 </div>

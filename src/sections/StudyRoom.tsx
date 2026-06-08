@@ -53,7 +53,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
 
   // Start session when entering study room
   useEffect(() => {
-    startSession(scene.name)
+    startSession()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -66,14 +66,12 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
   }, [sound, onBack])
 
   const endStudy = useCallback(() => {
-    // Record elapsed time when ending study early
-    const elapsedSeconds = timer.totalSeconds - timer.timeLeft
-    const elapsedMinutes = Math.floor(elapsedSeconds / 60)
-    
     // Record session
-    endSession(elapsedMinutes, goal || undefined)
+    endSession(goal || undefined, scene.name)
     
     // Record pomodoro if completed
+    const elapsedSeconds = timer.totalSeconds - timer.timeLeft
+    const elapsedMinutes = Math.floor(elapsedSeconds / 60)
     if (elapsedMinutes > 0) {
       recordPomodoro(elapsedMinutes)
     }
@@ -83,7 +81,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
       document.exitFullscreen().catch(() => {})
     }
     onHome()
-  }, [sound, onHome, timer.timeLeft, timer.totalSeconds, recordPomodoro, endSession, goal])
+  }, [sound, onHome, timer.timeLeft, timer.totalSeconds, recordPomodoro, endSession, goal, scene.name])
 
   // 全屏模式
   const toggleFullscreen = useCallback(async () => {

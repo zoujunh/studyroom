@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { api } from '../utils/api'
 import { isLoggedIn } from '../utils/auth'
 
@@ -13,7 +13,7 @@ interface StudySession {
 
 export function useStudySessions() {
   const [sessions, setSessions] = useState<StudySession[]>([])
-  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null)
+  const startTimeRef = useRef<number>(0)
 
   // Load sessions from API on mount
   useEffect(() => {
@@ -24,30 +24,36 @@ export function useStudySessions() {
     }
   }, [])
 
-  const startSession = useCallback((sceneName: string) => {
-    if (isLoggedIn()) {
-      api.createSession({ scene_name: sceneName }).then((result) => {
-        setCurrentSessionId(result.session.id)
-      }).catch(console.error)
-    }
+  const startSession = useCallback(() => {
+    startTimeRef.current = Date.now()
   }, [])
 
-  const endSession = useCallback((duration: number, goal?: string) => {
-    if (isLoggedIn() && currentSessionId) {
-      api.updateSession(currentSessionId, { duration, goal }).then(() => {
+  const endSession = useCallback((goal?: string, sceneName?: string) => {
+    if (!isLoggedIn()) return
+    
+    const duration = Math.floor((Date.now() - startTimeRef.current) / 60000)
+    if (duration <= 0) return
+    
+    // Create record on exit
+    api.createSession({ duration, goal, scene_name: sceneName })
+      .then(() => {
         // Refresh sessions list
         api.getSessions().then((result) => {
           setSessions(result.sessions)
         }).catch(console.error)
-        setCurrentSessionId(null)
-      }).catch(console.error)
-    }
-  }, [currentSessionId])
+      })
+      .catch(() => {
+        console.error('创建学习记录失败，重试中...')
+        // Retry once
+        setTimeout(() => {
+          api.createSession({ duration, goal, scene_name: sceneName }).catch(console.error)
+        }, 2000)
+      })
+  }, [])
 
   return {
     sessions,
     startSession,
     endSession,
-    currentSessionId,
   }
 }
