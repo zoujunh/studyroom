@@ -36,7 +36,7 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
             <span>{scene.detail}</span>
           </div>
           <h2 className="panel-title-compact">选择你的学习场景</h2>
-          <div className="mt-3 grid grid-cols-2 flex-1 gap-3 md:mt-4 md:gap-4">
+          <div className="mt-3 grid grid-cols-2 flex-1 gap-3 md:mt-4 md:gap-4" style={{ minHeight: 'clamp(300px, 40vh, 500px)' }}>
             {scenes.map((item) => (
               <button
                 key={item.id}
@@ -46,7 +46,7 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
               >
                 <img src={item.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4">
+                <div className="absolute bottom-2 left-4 md:bottom-4 md:left-4">
                   <div className="text-sm font-semibold text-white md:text-base">{item.name}</div>
                   <div className="mt-1 text-xs text-white/70">{item.description}</div>
                 </div>
