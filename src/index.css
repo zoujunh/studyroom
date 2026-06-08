@@ -42,8 +42,18 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100dvh;
+  height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh;
+}
+
 body {
   min-width: 320px;
+  height: 100dvh;
+  height: 100vh;
+  min-height: 100dvh;
   min-height: 100vh;
   margin: 0;
   overflow: hidden;
@@ -63,6 +73,10 @@ button {
 }
 
 .home-scene {
+  height: 100dvh;
+  height: 100vh;
+  min-height: 100dvh;
+  min-height: 100vh;
   background: var(--bg-primary);
 }
 
@@ -403,7 +417,7 @@ button {
 .scene-card {
   position: relative;
   display: flex;
-  min-height: 0;
+  min-height: 150px;
   overflow: hidden;
   border: 2px solid transparent;
   border-radius: 16px;
@@ -413,6 +427,20 @@ button {
   transition:
     opacity 200ms ease,
     border-color 200ms ease;
+}
+
+.scene-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.scene-card > div {
+  position: relative;
+  z-index: 1;
 }
 
 .scene-card:hover {
@@ -804,10 +832,8 @@ button {
 
 /* 底部Footer */
 .footer-new {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: relative;
+  margin-top: auto;
   z-index: 5;
   display: flex;
   justify-content: space-between;
