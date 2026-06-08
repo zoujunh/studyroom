@@ -182,7 +182,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
       <div className="noise-layer" />
 
       {/* 顶部导航栏 - 半透明玻璃态 */}
-      <header className="absolute left-0 right-0 top-0 z-20 flex h-14 items-center justify-between px-5 md:px-8" style={{ background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+      <header className="absolute left-0 right-0 top-0 z-20 flex h-12 items-center justify-between px-4 md:h-14 md:px-8" style={{ background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <button className="pill-button-sm justify-self-start" type="button" onClick={leave}>
           <ArrowLeft className="h-3.5 w-3.5" />
           <span className="text-xs">返回</span>
@@ -196,18 +196,18 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
         <div className="flex items-center gap-2">
           <button className="pill-button-sm" type="button" onClick={() => setShowBgPicker(true)}>
             <Image className="h-3.5 w-3.5" />
-            <span className="text-xs">换景</span>
+            <span className="hidden text-xs md:inline">换景</span>
           </button>
           <button className="pill-button-sm" type="button" onClick={toggleFullscreen}>
             {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-            <span className="text-xs">{isFullscreen ? '退出全屏' : '沉浸'}</span>
+            <span className="hidden text-xs md:inline">{isFullscreen ? '退出全屏' : '沉浸'}</span>
           </button>
         </div>
       </header>
 
       {/* 计时器卡片 - 轻量化悬浮 */}
       <div className="absolute left-1/2 top-1/2 z-20 w-[calc(100%-2rem)] max-w-xs -translate-x-1/2 -translate-y-1/2 md:left-10 md:top-auto md:bottom-32 md:translate-x-0 md:translate-y-0">
-        <div className="relative rounded-2xl p-5 md:p-6" style={{ background: 'rgba(0, 0, 0, 0.25)', backdropFilter: 'blur(10px)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)' }}>
+        <div className="relative rounded-2xl p-4 md:p-6" style={{ background: 'rgba(0, 0, 0, 0.25)', backdropFilter: 'blur(10px)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)' }}>
           <div className="mb-3 flex items-center justify-between">
             <div className="eyebrow">POMODORO #{timer.round}</div>
             <div className="flex items-center gap-2 text-xs text-emerald-300">
@@ -215,8 +215,8 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
               {timer.isRunning ? '学习中' : '暂停'}
             </div>
           </div>
-          <div className="font-mono text-5xl font-light leading-none tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] tabular-nums md:text-6xl">{timer.formatted}</div>
-          <div className="mt-5 flex items-center justify-between text-xs text-white/35 md:mt-7">
+          <div className="font-mono text-4xl font-light leading-none tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] tabular-nums md:text-6xl">{timer.formatted}</div>
+          <div className="mt-4 flex items-center justify-between text-xs text-white/35 md:mt-7">
             <span>本轮进度</span>
             <span>{Math.round(timer.progress)}%</span>
           </div>
@@ -227,8 +227,8 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
       </div>
 
       {/* 目标输入框 - 回车确认 */}
-      <div className="absolute bottom-28 left-1/2 z-20 -translate-x-1/2">
-        <div className="flex items-center gap-2 rounded-full px-4 py-2.5 text-sm" style={{ background: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(8px)' }}>
+      <div className="absolute bottom-24 left-1/2 z-20 w-[calc(100%-2rem)] -translate-x-1/2 md:bottom-28 md:w-auto">
+        <div className="flex items-center gap-2 rounded-full px-3 py-2 text-sm md:px-4 md:py-2.5" style={{ background: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(8px)' }}>
           <Target className={`h-3.5 w-3.5 shrink-0 ${goal ? 'text-emerald-300/70' : 'text-white/30'}`} />
           {isEditingGoal ? (
             <input
@@ -242,7 +242,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
                 setIsEditingGoal(false)
               }}
               placeholder="输入目标，按回车确认..."
-              className="bg-transparent outline-none border-none text-white/70 placeholder:text-white/30 w-48"
+              className="bg-transparent outline-none border-none text-white/70 placeholder:text-white/30 w-40 md:w-48"
               maxLength={50}
               autoFocus
             />
@@ -266,14 +266,14 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
       </div>
 
       {/* 底部控制条 - 三组布局 */}
-      <div className="absolute bottom-6 left-1/2 z-20 flex h-11 w-[min(48rem,calc(100%-2rem))] -translate-x-1/2 items-center justify-between rounded-full px-4 text-xs text-white/56" style={{ background: 'rgba(0, 0, 0, 0.35)', backdropFilter: 'blur(10px)' }}>
+      <div className="absolute bottom-4 left-1/2 z-20 flex h-10 w-[calc(100%-1rem)] -translate-x-1/2 items-center justify-between rounded-full px-3 text-xs text-white/56 md:bottom-6 md:h-11 md:w-[min(48rem,calc(100%-2rem))] md:px-4" style={{ background: 'rgba(0, 0, 0, 0.35)', backdropFilter: 'blur(10px)' }}>
         {/* 左边：音量 */}
-        <div className="flex items-center h-9">
+        <div className="flex items-center h-8 md:h-9">
           <Volume2 className="h-4 w-4 text-white/40" />
-          <div className="w-2" />
-          <span className="text-white/40 text-sm">背景音</span>
-          <div className="w-3" />
-          <div style={{ width: '120px' }}>
+          <div className="w-1 md:w-2" />
+          <span className="hidden text-white/40 text-sm md:inline">背景音</span>
+          <div className="w-2 md:w-3" />
+          <div style={{ width: '80px' }} className="md:w-[120px]">
             <GlassSlider
               value={ambientVolume}
               onChange={setAmbientVolume}
@@ -286,23 +286,23 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
         <div className="h-4 w-px bg-white/20" />
 
         {/* 中间：静音、混音、暂停、重置 */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             className={`control-button-sm ${sound.isPlaying ? 'text-emerald-300/70' : 'text-white/30'}`}
             type="button"
             onClick={toggleSound}
           >
             {sound.isPlaying ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-            {sound.isPlaying ? '音效' : '静音'}
+            <span className="hidden md:inline">{sound.isPlaying ? '音效' : '静音'}</span>
           </button>
 
           <button className="control-button-sm" type="button" onClick={timer.isRunning ? pause : resume}>
             {timer.isRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-            {timer.isRunning ? '暂停' : '继续'}
+            <span className="hidden md:inline">{timer.isRunning ? '暂停' : '继续'}</span>
           </button>
           <button className="control-button-sm" type="button" onClick={timer.reset}>
             <RotateCcw className="h-3.5 w-3.5" />
-            重置
+            <span className="hidden md:inline">重置</span>
           </button>
         </div>
 
@@ -310,14 +310,14 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
         <div className="h-4 w-px bg-white/20" />
 
         {/* 右边：休息、结束学习 */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <button className="control-button-sm" type="button" onClick={handleBreak}>
             <Coffee className="h-3.5 w-3.5" />
-            休息
+            <span className="hidden md:inline">休息</span>
           </button>
           <button className="control-button-sm hover:text-red-300" type="button" onClick={endStudy}>
             <X className="h-3.5 w-3.5" />
-            结束
+            <span className="hidden md:inline">结束</span>
           </button>
         </div>
       </div>

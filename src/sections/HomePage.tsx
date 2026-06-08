@@ -63,10 +63,10 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
       <div className="noise-layer" />
 
       {/* 顶部导航栏 */}
-      <header className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-8 py-5">
-        <div className="flex items-center gap-3 font-semibold tracking-tight text-white">
-          <Moon className="h-5 w-5" />
-          <span>安静之境</span>
+      <header className="absolute left-0 right-0 top-0 z-20 flex flex-wrap items-center justify-between px-4 py-3 md:px-8 md:py-5">
+        <div className="flex items-center gap-2 font-semibold tracking-tight text-white md:gap-3">
+          <Moon className="h-4 w-4 md:h-5 md:w-5" />
+          <span className="text-sm md:text-base">安静之境</span>
         </div>
 
         <nav className="hidden items-center gap-2 md:flex">
@@ -93,21 +93,21 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
           </button>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
           <button className="nav-link-new" type="button" onClick={() => setComingSoonModal('语言设置')}>
             <Languages className="h-4 w-4 icon-lang" />
-            中文
+            <span className="hidden md:inline">中文</span>
           </button>
           {user ? (
             <>
-              <span className="text-sm text-white/60">{user.username}</span>
+              <span className="text-xs text-white/60 md:text-sm">{user.username}</span>
               <button
                 className="nav-link-new"
                 type="button"
                 onClick={onLogout}
               >
                 <LogIn className="h-4 w-4 icon-login" />
-                退出
+                <span className="hidden md:inline">退出</span>
               </button>
             </>
           ) : (

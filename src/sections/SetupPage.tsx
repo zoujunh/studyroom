@@ -29,14 +29,14 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
         返回
       </button>
 
-      <div className="relative z-10 mx-auto grid max-w-7xl gap-4 py-4 lg:h-[calc(100%-3.2rem)] lg:grid-cols-[1.2fr_1fr] lg:items-stretch lg:py-0">
-        <section className="glass-panel relative flex h-full flex-col p-5" style={{ background: 'rgba(255, 255, 255, 0.08)', borderRadius: '16px' }}>
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-3 py-3 md:gap-4 md:py-4 lg:h-[calc(100%-3.2rem)] lg:grid-cols-[1.2fr_1fr] lg:items-stretch lg:py-0">
+        <section className="glass-panel relative flex h-full flex-col p-4 md:p-5" style={{ background: 'rgba(255, 255, 255, 0.08)', borderRadius: '16px' }}>
           <div className="panel-kicker">
             <span className="eyebrow">STEP 01</span>
             <span>{scene.detail}</span>
           </div>
           <h2 className="panel-title-compact">选择你的学习场景</h2>
-          <div className="mt-4 grid flex-1 gap-4 md:grid-cols-2">
+          <div className="mt-3 grid flex-1 gap-3 md:mt-4 md:grid-cols-2 md:gap-4">
             {scenes.map((item) => (
               <button
                 key={item.id}
@@ -46,8 +46,8 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
               >
                 <img src={item.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-4 left-4">
-                  <div className="text-base font-semibold text-white">{item.name}</div>
+                <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4">
+                  <div className="text-sm font-semibold text-white md:text-base">{item.name}</div>
                   <div className="mt-1 text-xs text-white/70">{item.description}</div>
                 </div>
                 {item.id === scene.id && (
@@ -58,8 +58,8 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
           </div>
         </section>
 
-        <div className="grid gap-5">
-          <section className="glass-panel relative p-5" style={{ background: 'rgba(255, 255, 255, 0.08)', borderRadius: '16px' }}>
+        <div className="grid gap-4 md:gap-5">
+          <section className="glass-panel relative p-4 md:p-5" style={{ background: 'rgba(255, 255, 255, 0.08)', borderRadius: '16px' }}>
             <div className="panel-kicker">
               <span className="eyebrow">STEP 02</span>
               <span>声音会在用户操作后启动</span>
@@ -69,7 +69,7 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
             <VolumeControl label="背景音" value={ambientVolume} onChange={setAmbientVolume} description="根据当前场景自动匹配环境声" />
           </section>
 
-          <section className="glass-panel relative p-5" style={{ background: 'rgba(255, 255, 255, 0.08)', borderRadius: '16px' }}>
+          <section className="glass-panel relative p-4 md:p-5" style={{ background: 'rgba(255, 255, 255, 0.08)', borderRadius: '16px' }}>
             <div className="panel-kicker">
               <span className="eyebrow">STEP 03</span>
               <span>选择今天的节奏</span>
