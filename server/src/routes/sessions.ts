@@ -4,14 +4,16 @@ import { AuthRequest } from '../middleware/auth.js'
 
 const router = Router()
 
-// Get recent sessions (last 15 days)
+// Get recent sessions (last 15 days, exclude 0-minute records)
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId || 0
 
     const [sessions] = await pool.execute(
       `SELECT * FROM study_sessions 
-       WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 15 DAY)
+       WHERE user_id = ? 
+         AND created_at >= DATE_SUB(NOW(), INTERVAL 15 DAY)
+         AND duration_minutes > 0
        ORDER BY created_at DESC`,
       [userId]
     )

@@ -266,7 +266,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
       </div>
 
       {/* 底部控制条 - 三组布局 */}
-      <div className="absolute bottom-4 left-1/2 z-20 flex h-10 w-[calc(100%-1rem)] -translate-x-1/2 items-center justify-between rounded-full px-3 text-xs text-white/56 md:bottom-6 md:h-11 md:w-[min(48rem,calc(100%-2rem))] md:px-4" style={{ background: 'rgba(0, 0, 0, 0.35)', backdropFilter: 'blur(10px)' }}>
+      <div className="absolute bottom-4 left-1/2 z-20 flex h-10 w-[calc(100%-1rem)] -translate-x-1/2 items-center justify-between rounded-full px-3 text-xs text-white/56 md:bottom-6 md:h-11 md:w-[min(48rem,calc(100%-2rem))] md:px-4" style={{ background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(10px)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {/* 左边：音量 */}
         <div className="flex items-center h-8 md:h-9">
           <Volume2 className="h-4 w-4 text-white/40" />

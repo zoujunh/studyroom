@@ -36,7 +36,7 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
             <span>{scene.detail}</span>
           </div>
           <h2 className="panel-title-compact">选择你的学习场景</h2>
-          <div className="mt-3 grid flex-1 gap-3 md:mt-4 md:grid-cols-2 md:gap-4">
+          <div className="mt-3 grid grid-cols-2 flex-1 gap-3 md:mt-4 md:gap-4">
             {scenes.map((item) => (
               <button
                 key={item.id}
