@@ -97,7 +97,18 @@ export const api = {
     request<{ message: string }>(`/plans/${id}`, { method: 'DELETE' }),
 
   // Sessions
-  getSessions: () => request<{ sessions: Array<{ id: number; start_time: string; duration_minutes: number; goal: string | null; scene_name: string | null; created_at: string }> }>('/sessions'),
+  getSessions: () => request<{ sessions: Array<{ id: number; start_time: string; end_time: string | null; duration_minutes: number; goal: string | null; scene_name: string | null; status: string; created_at: string }> }>('/sessions'),
+  startSession: (data: { goal?: string; scene_name?: string }) =>
+    request<{ message: string; session: { id: number; status: string } }>('/sessions/start', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  endSession: (id: number, data: { duration_minutes: number; goal?: string }) =>
+    request<{ message: string }>(`/sessions/${id}/end`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getActiveSession: () => request<{ session: { id: number; start_time: string; goal: string | null; scene_name: string | null } | null }>('/sessions/active'),
   createSession: (data: { duration?: number; goal?: string; scene_name?: string }) =>
     request<{ message: string; session: { id: number; duration?: number; goal?: string; scene_name?: string } }>('/sessions', {
       method: 'POST',

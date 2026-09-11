@@ -1,4 +1,6 @@
-import { ArrowRight, BarChart3, Calendar, CheckCircle, Clock, Crown, Image, Languages, LogIn, MapPin, Moon, Plus, Target, Trash2, TrendingUp } from 'lucide-react'
+import { ArrowRight, BarChart3, Calendar, CheckCircle, Clock, Crown, Image, Languages, LogIn, MapPin, Plus, Target, Trash2, TrendingUp } from 'lucide-react'
+import { Logo } from '../components/Logo'
+import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Modal } from '../components/Modal'
 import { PhotoSelector } from '../components/PhotoSelector'
@@ -12,7 +14,7 @@ type HomePageProps = {
   onLogout: () => void
 }
 
-const DEFAULT_PHOTO = '/images/morning/scene-morning.jpg'
+const DEFAULT_PHOTO = '/images/morning/scene-morning.webp'
 
 export function HomePage({ onStart, onLogout }: HomePageProps) {
   const [backgroundPhoto, setBackgroundPhoto] = useState(() => {
@@ -56,7 +58,7 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
     <section className="home-scene relative min-h-screen md:h-full md:overflow-hidden overflow-hidden">
       {/* 背景图 */}
       <div className="absolute inset-0 z-0">
-        <img src={backgroundPhoto} alt="" className="h-full w-full object-cover" />
+        <img src={backgroundPhoto} alt="" className="h-full w-full object-cover" onError={(e) => { const t = e.currentTarget; if (t.src.endsWith('.webp')) t.src = t.src.replace('.webp', '.jpg') }} />
         <div className="absolute inset-0 bg-black/30" />
       </div>
       
@@ -64,10 +66,7 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
 
       {/* 顶部导航栏 */}
       <header className="absolute left-0 right-0 top-0 z-20 flex flex-wrap items-center justify-between px-4 py-3 md:px-8 md:py-5">
-        <div className="flex items-center gap-2 font-semibold tracking-tight text-white md:gap-3">
-          <Moon className="h-4 w-4 md:h-5 md:w-5" />
-          <span className="text-sm md:text-base">安静之境</span>
-        </div>
+        <Logo size="sm" />
 
         <nav className="hidden items-center gap-2 md:flex">
           <button className="nav-link-new" type="button" onClick={() => setShowPlan(true)}>
@@ -121,16 +120,36 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
 
       {/* 主内容区 */}
       <div className="relative z-10 flex min-h-[60vh] md:min-h-0 md:h-full flex-col items-center justify-center px-6 text-center">
-        <h1 className="hero-title-new">
-          开启你的清晨自习室
-        </h1>
-        <p className="hero-subtitle-new">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <h1 className="hero-title-new" style={{ fontFamily: "'Noto Serif SC', 'STSong', serif" }}>
+            夜深了，安静坐下吧
+          </h1>
+        </motion.div>
+        <motion.p
+          className="hero-subtitle-new"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        >
           选择场景、声音与节奏，构建专属学习空间
-        </p>
-        <button className="cta-button-transparent" type="button" onClick={onStart}>
+        </motion.p>
+        <motion.button
+          className="cta-button-transparent"
+          type="button"
+          onClick={onStart}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.98 }}
+        >
           开始学习
           <ArrowRight className="h-4 w-4" />
-        </button>
+        </motion.button>
       </div>
 
       {/* 在线人数指示器 */}
@@ -142,13 +161,11 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
       {/* 底部Footer */}
       <footer className="footer-new">
         <div className="footer-brand">
-          <div className="flex items-center gap-2 font-semibold text-white">
-            <Moon className="h-4 w-4" />
-            安静之境
-          </div>
+          <Logo size="sm" />
           <p className="mt-3 max-w-xs text-sm leading-6 text-white/60">
             结合沉浸式场景、专注音乐与智能计划，让每一次学习都更专注。
           </p>
+          <span className="footer-icp">赣ICP备2026013419号</span>
         </div>
         
         <div className="footer-links">
@@ -171,6 +188,7 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
             <div className="footer-item">隐私政策</div>
           </div>
         </div>
+
       </footer>
 
       {/* 背景图选择器 */}
@@ -236,13 +254,28 @@ export function HomePage({ onStart, onLogout }: HomePageProps) {
               sessions.map((session) => (
                 <div
                   key={session.id}
-                  className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 p-3"
+                  className={`flex items-center justify-between rounded-lg border p-3 ${
+                    session.status === 'studying'
+                      ? 'border-emerald-400/30 bg-emerald-500/10'
+                      : session.status === 'interrupted'
+                      ? 'border-yellow-400/30 bg-yellow-500/10'
+                      : 'border-white/10 bg-white/5'
+                  }`}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 text-sm text-white">
                       <span>{new Date(session.created_at).toLocaleDateString('zh-CN')}</span>
                       <span className="text-white/40">·</span>
-                      <span>{session.duration_minutes} 分钟</span>
+                      {session.status === 'studying' ? (
+                        <span className="flex items-center gap-1 text-emerald-300">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                          学习中
+                        </span>
+                      ) : session.status === 'interrupted' ? (
+                        <span className="text-yellow-300">{session.duration_minutes || '<1'} 分钟 (意外退出)</span>
+                      ) : (
+                        <span>{session.duration_minutes} 分钟</span>
+                      )}
                       {session.scene_name && (
                         <>
                           <span className="text-white/40">·</span>

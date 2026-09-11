@@ -4,11 +4,12 @@ import { useSettings } from '../hooks/useSettings'
 import { HomePage } from '../sections/HomePage'
 import { SetupPage } from '../sections/SetupPage'
 import { StudyRoom } from '../sections/StudyRoom'
+import { PreparingPage } from '../sections/PreparingPage'
 import { LoginPage } from './Login'
 import { RegisterPage } from './Register'
 import { isLoggedIn, logout } from '../utils/auth'
 
-type View = 'login' | 'register' | 'home' | 'setup' | 'room'
+type View = 'login' | 'register' | 'home' | 'preparing' | 'setup' | 'room'
 
 export function StudyApp() {
   const [view, setView] = useState<View>(() => {
@@ -78,8 +79,24 @@ export function StudyApp() {
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
             <HomePage
-              onStart={() => setView('setup')}
+              onStart={() => setView('preparing')}
               onLogout={handleLogout}
+            />
+          </motion.div>
+        )}
+
+        {view === 'preparing' && (
+          <motion.div
+            key="preparing"
+            className="min-h-full md:h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <PreparingPage
+              onReady={() => setView('setup')}
+              onBack={() => setView('home')}
             />
           </motion.div>
         )}

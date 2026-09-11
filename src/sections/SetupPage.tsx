@@ -20,7 +20,7 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
 
   return (
     <section className="setup-page relative h-full overflow-hidden overflow-x-hidden p-3 md:p-5" style={{ minHeight: '100dvh' }}>
-      <img src={scene.image} alt="" className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500" />
+      <img src={scene.image} alt="" className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500" onError={(e) => { const t = e.currentTarget; if (t.src.endsWith('.webp')) t.src = t.src.replace('.webp', '.jpg') }} />
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(6,8,10,0.62),rgba(41,36,31,0.42)_45%,rgba(8,10,14,0.68))] backdrop-blur-[2px]" />
       <div className="noise-layer" />
 
@@ -44,7 +44,7 @@ export function SetupPage({ initialSettings, onBack, onStart }: SetupPageProps) 
                 type="button"
                 onClick={() => setScene(item)}
               >
-                <img src={item.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={item.image} alt="" className="absolute inset-0 h-full w-full object-cover" onError={(e) => { const t = e.currentTarget; if (t.src.endsWith('.webp')) t.src = t.src.replace('.webp', '.jpg') }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-4 left-4">
                   <div className="text-sm font-semibold text-white md:text-base">{item.name}</div>

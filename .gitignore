@@ -38,3 +38,18 @@ public/sounds/scenes/*.m4a
 
 # PM2
 .pm2
+
+# 敏感备份文件（含 Token，禁止提交）
+.env.bak*
+*.env.bak*
+server/.env.bak*
+*.bak
+*.bak2
+server/src/*.bak
+*.bak-*
+*.bak*
+server/src/*.bak*
+
+# 大型备份文件与音频源文件（网站只引用 mp3）
+_backup/
+*.wav

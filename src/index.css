@@ -707,23 +707,26 @@ button {
 
 /* 主标题 */
 .hero-title-new {
-  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-size: clamp(2rem, 5vw, 4rem);
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: #ffffff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  text-shadow:
+    0 0 40px rgba(167, 243, 208, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.5);
   margin-bottom: 1.5rem;
-  line-height: 1.2;
+  line-height: 1.4;
 }
 
 /* 副标题 */
 .hero-subtitle-new {
-  font-size: 1.125rem;
+  font-size: 1rem;
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.5);
   max-width: 600px;
   margin: 0 auto 2.5rem;
   text-align: center;
+  letter-spacing: 0.05em;
 }
 
 /* CTA按钮 */
@@ -819,6 +822,7 @@ button {
   right: 0;
   z-index: 10;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   padding: 1.5rem 2rem;
@@ -835,6 +839,13 @@ button {
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.5);
   margin-top: 0.5rem;
+}
+
+.footer-icp {
+  font-size: 0.625rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 0.25rem;
+  display: block;
 }
 
 .footer-links {
@@ -861,6 +872,8 @@ button {
 .footer-item:hover {
   color: #ffffff;
 }
+
+
 
 /* ============================================
    RESPONSIVE DESIGN

@@ -55,20 +55,36 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
 
   // Start session when entering study room
   useEffect(() => {
-    startSession()
+    startSession(undefined, scene.name)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 组件卸载时保存记录（兜底，防止意外退出）
+  const endedRef = useRef(false)
+  useEffect(() => {
+    return () => {
+      if (!endedRef.current) {
+        endedRef.current = true
+        endSession(goal || undefined, scene.name)
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const leave = useCallback(() => {
+    // 退出时也要保存记录
+    endedRef.current = true
+    endSession(goal || undefined, scene.name)
     sound.stop()
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {})
     }
     onBack()
-  }, [sound, onBack])
+  }, [sound, onBack, endSession, goal, scene.name])
 
   const endStudy = useCallback(() => {
     // Record session
+    endedRef.current = true
     endSession(goal || undefined, scene.name)
     
     // Record pomodoro if completed
@@ -176,7 +192,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
 
   return (
       <section ref={containerRef} className="study-room relative h-full overflow-x-hidden bg-black">
-      <img src={customBg || scene.image} alt="" className="absolute inset-0 h-full w-full scale-[1.02] object-cover slow-zoom" />
+      <img src={customBg || scene.image} alt="" className="absolute inset-0 h-full w-full scale-[1.02] object-cover slow-zoom" onError={(e) => { const t = e.currentTarget; if (t.src.endsWith('.webp')) t.src = t.src.replace('.webp', '.jpg') }} />
       {/* 清晰背景 */}
       <div className="absolute inset-0 bg-black/35" />
       <div className="noise-layer" />
@@ -437,7 +453,7 @@ export function StudyRoom({ onBack, onHome, settings }: StudyRoomProps) {
               }`}
               onClick={() => handleBgSelect(bg)}
             >
-              <img src={bg} alt="" className="h-full w-full object-cover" />
+              <img src={bg} alt="" className="h-full w-full object-cover" onError={(e) => { const t = e.currentTarget; if (t.src.endsWith('.webp')) t.src = t.src.replace('.webp', '.jpg') }} />
               {(customBg || scene.image) === bg && (
                 <div className="absolute right-2 top-2 rounded-full bg-emerald-400 p-1">
                   <Check className="h-3 w-3 text-black" />

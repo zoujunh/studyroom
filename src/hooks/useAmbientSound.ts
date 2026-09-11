@@ -9,19 +9,19 @@ interface AudioNode {
 
 const sceneAudioMap: Record<string, { file: string; volume: number }[]> = {
   morning: [
-    { file: '/sounds/scenes/wind-and-birds.wav', volume: 1.0 },
+    { file: '/sounds/scenes/wind-and-birds.mp3', volume: 1.0 },
   ],
   'rainy-cafe': [
-    { file: '/sounds/scenes/rain-on-windows.wav', volume: 0.8 },
-    { file: '/sounds/scenes/cafe.wav', volume: 0.3 },
+    { file: '/sounds/scenes/rain-on-windows.mp3', volume: 0.8 },
+    { file: '/sounds/scenes/cafe.mp3', volume: 0.3 },
   ],
   library: [
-    { file: '/sounds/scenes/library-ambience-noise.wav', volume: 0.7 },
-    { file: '/sounds/scenes/library-pages.wav', volume: 0.2 },
+    { file: '/sounds/scenes/library-ambience-noise.mp3', volume: 0.7 },
+    { file: '/sounds/scenes/library-pages.mp3', volume: 0.2 },
   ],
   ocean: [
-    { file: '/sounds/scenes/ocean-waves.wav', volume: 0.8 },
-    { file: '/sounds/scenes/seagulls.wav', volume: 0.25 },
+    { file: '/sounds/scenes/ocean-waves.mp3', volume: 0.8 },
+    { file: '/sounds/scenes/seagulls.mp3', volume: 0.25 },
   ],
 }
 

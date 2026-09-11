@@ -17,3 +17,14 @@ export interface StudySettings {
   musicVolume: number
   ambientVolume: number
 }
+
+export interface StudySession {
+  id: number
+  start_time: string
+  end_time: string | null
+  duration_minutes: number
+  goal: string | null
+  scene_name: string | null
+  status: 'studying' | 'completed' | 'interrupted'
+  created_at: string
+}
