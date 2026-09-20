@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#0f8a72" />
+  <rect x="96" y="112" width="320" height="200" rx="30" fill="#ffffff" opacity="0.97" />
+  <text
+    x="256"
+    y="252"
+    text-anchor="middle"
+    font-family="Helvetica, Arial, sans-serif"
+    font-size="104"
+    font-weight="700"
+    fill="#0f8a72"
+  >408</text>
+  <path d="M256 330v52" stroke="#ffffff" stroke-width="26" stroke-linecap="round" />
+  <path d="M180 412h152" stroke="#ffffff" stroke-width="26" stroke-linecap="round" />
+</svg>

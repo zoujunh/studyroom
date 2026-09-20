@@ -1,0 +1,149 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-canvas: #f1f5f4;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7faf9;
+  --color-line: #e4eae8;
+  --color-ink: #10201c;
+  --color-ink-2: #556662;
+  --color-ink-3: #93a29f;
+  --color-brand: #0f8a72;
+  --color-brand-dark: #0b6d5b;
+  --color-brand-soft: #e6f3ef;
+  --color-again: #d9695f;
+  --color-again-soft: #fdeeec;
+  --color-hard: #c98f2f;
+  --color-hard-soft: #fdf4e6;
+  --color-good: #3f9e7d;
+  --color-good-soft: #e9f6f1;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Noto Sans SC', system-ui, sans-serif;
+}
+
+.dark {
+  --color-canvas: #0d1311;
+  --color-surface: #161f1c;
+  --color-surface-2: #1b2623;
+  --color-line: #26332f;
+  --color-ink: #e8efec;
+  --color-ink-2: #9fb0ab;
+  --color-ink-3: #6d7d79;
+  --color-brand: #2fa88c;
+  --color-brand-dark: #1f7d67;
+  --color-brand-soft: #16302a;
+  --color-again-soft: #33201e;
+  --color-hard-soft: #332818;
+  --color-good-soft: #16302a;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    margin: 0;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-ink-3) 45%, transparent);
+    border-radius: 999px;
+  }
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ---------- 卡片正文（Markdown 渲染结果） ---------- */
+.md-body {
+  @apply text-[15.5px] leading-[1.75] text-ink;
+}.md-body > *:first-child {
+  margin-top: 0;
+}
+.md-body h2 {
+  @apply mt-5 mb-2 text-[16px] font-semibold text-brand;
+  letter-spacing: 0.01em;
+}
+.md-body h3 {
+  @apply mt-4 mb-2 text-[15px] font-semibold text-ink;
+}
+.md-body p {
+  @apply my-2;
+}
+.md-body ul {
+  @apply my-2 space-y-1.5 pl-1;
+}
+.md-body li {
+  @apply relative pl-4;
+}
+.md-body li::before {
+  content: '';
+  @apply absolute top-[9px] left-0 h-[5px] w-[5px] rounded-full bg-brand;
+}
+.md-body strong {
+  @apply font-semibold text-ink;
+  background: linear-gradient(transparent 62%, color-mix(in srgb, var(--color-brand) 22%, transparent) 0);
+}
+.md-body em {
+  @apply text-ink-2 not-italic;
+}
+.md-body code {
+  @apply rounded-[6px] bg-surface-2 px-1.5 py-[1px] font-mono text-[13.5px] text-brand-dark;
+  border: 1px solid var(--color-line);
+}
+.md-body blockquote {
+  @apply my-3 rounded-r-xl border-l-[3px] border-brand bg-brand-soft/70 px-3.5 py-2.5 text-[14.5px] text-ink-2;
+}
+.md-body blockquote p {
+  @apply my-1;
+}
+.md-body blockquote strong {
+  @apply text-brand-dark;
+  background: none;
+}
+.md-body .math-block {
+  @apply my-3 overflow-x-auto rounded-xl bg-surface-2 px-3 py-2 text-center;
+  border: 1px solid var(--color-line);
+}
+.md-body .katex {
+  font-size: 1.02em;
+}
+
+/* 行内富文本（评分点要点、动画旁白、说明文字）：公式别把行高顶开 */
+.rich-text .katex {
+  font-size: 1.04em;
+}
+.rich-text {
+  word-break: break-word;
+}
+.md-body table {
+  @apply my-3 w-full border-collapse text-[14px];
+}
+.md-body th,
+.md-body td {
+  @apply border border-line px-2 py-1 text-left;
+}

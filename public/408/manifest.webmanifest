@@ -1,0 +1,20 @@
+{
+  "name": "408 刷卡 · 知识点间隔重复",
+  "short_name": "408 刷卡",
+  "description": "计算机考研 408 知识点刷卡背诵，FSRS 间隔重复调度，离线可用。",
+  "start_url": "/408/",
+  "scope": "/408/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f5f4",
+  "theme_color": "#0f8a72",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/408/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
