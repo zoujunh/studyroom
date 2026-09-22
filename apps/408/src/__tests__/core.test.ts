@@ -3,9 +3,10 @@ import { auditSeed, seedRows, SEED_VERSION } from '../data/seed';
 import { dayKey, diffDays, endOfDay, maxIntervalDays } from '../lib/date';
 import { renderInline, renderMarkdown } from '../lib/markdown';
 import { buildQueue, sessionTitle } from '../lib/queue';
-import { dailyStats, overallCounts, streakDays, todayQuota, bySubject } from '../lib/stats';
+import { dailyStats, overallCounts, sortNewCards, streakDays, todayQuota, bySubject } from '../lib/stats';
+import { applyFocus } from '../lib/focus';
 import { applyGrade, previewIntervals, statusOf, isDueNow } from '../srs/fsrs';
-import type { CardRow, DayStat, Grade, LogRow, Settings, SrsRow } from '../types';
+import type { CardFocusRow, CardRow, DayStat, Grade, LogRow, Settings, SrsRow } from '../types';
 
 /* ---------------- 测试工具 ---------------- */
 
@@ -291,7 +292,122 @@ describe('会话队列', () => {
     expect(sessionTitle('due')).toBe('今日复习');
     expect(sessionTitle('new')).toBe('新卡学习');
     expect(sessionTitle('random')).toBe('随机刷卡');
+    expect(sessionTitle('focus')).toBe('复习专项');
     expect(sessionTitle('chapter', 'ds', '图')).toBe('章节 · 图');
+  });
+});
+
+/* ---------------- 新卡排序（曾经「全是计算机网络」的 bug） ---------------- */
+
+describe('新卡排序', () => {
+  const build = () => [
+    ...makeCards(10, 'cn', '传输层').map((c, i) => ({ ...c, id: `cn-${i}`, importance: 3 })),
+    ...makeCards(10, 'co', '存储系统').map((c, i) => ({ ...c, id: `co-${i}`, importance: 3 })),
+    ...makeCards(10, 'ds', '图').map((c, i) => ({ ...c, id: `ds-${i}`, importance: 3 })),
+    ...makeCards(10, 'os', '进程管理').map((c, i) => ({ ...c, id: `os-${i}`, importance: 3 })),
+  ];
+
+  it('四科混着出现，不会同一科扎堆（字母序兜底导致的 bug）', () => {
+    const sorted = sortNewCards(build());
+    expect(sorted).toHaveLength(40);
+    // 前 8 张里四科都要出现
+    expect(new Set(sorted.slice(0, 8).map((c) => c.subject)).size).toBe(4);
+    // 前 20 张里每科至少 3 张
+    for (const subject of ['ds', 'co', 'os', 'cn'] as const) {
+      expect(sorted.slice(0, 20).filter((c) => c.subject === subject).length).toBeGreaterThanOrEqual(3);
+    }
+    // 关键回归：以前前 10 张全是 cn-*（计算机网络）
+    expect(new Set(sorted.slice(0, 10).map((c) => c.subject)).size).toBeGreaterThan(1);
+  });
+
+  it('考频高的仍然排在前面', () => {
+    const cards = [
+      ...build(),
+      ...makeCards(2, 'ds', '图').map((c, i) => ({ ...c, id: `hot-${i}`, importance: 5 })),
+    ];
+    const sorted = sortNewCards(cards);
+    expect(sorted[0].importance).toBe(5);
+    expect(sorted[1].importance).toBe(5);
+    expect(sorted[2].importance).toBe(3);
+  });
+
+  it('同一科目的卡内部被打乱（不是固定顺序）', () => {
+    const first = sortNewCards(build()).map((c) => c.id);
+    const second = sortNewCards(build()).map((c) => c.id);
+    // 两次排序结果大概率不同（随机性），但都满足四科混排
+    expect(first.length).toBe(second.length);
+    expect(new Set(first.slice(0, 8).map((id) => id.split('-')[0])).size).toBe(4);
+  });
+});
+
+/* ---------------- 复习专项 ---------------- */
+
+describe('复习专项状态机', () => {
+  const T = T0.getTime();
+
+  it('「不会 / 模糊」进专项并累加错误次数', () => {
+    const first = applyFocus('c1', undefined, 'again', T);
+    expect(first.added).toBe(true);
+    expect(first.next?.weakCount).toBe(1);
+    expect(first.next?.goodStreak).toBe(0);
+    expect(first.next?.lastGrade).toBe('again');
+
+    const second = applyFocus('c1', first.next ?? undefined, 'hard', T + 1000);
+    expect(second.next?.weakCount).toBe(2);
+    expect(second.next?.lastGrade).toBe('hard');
+    expect(second.next?.firstWeakAt).toBe(T);
+  });
+
+  it('「会了」连续两次自动移出专项', () => {
+    const weak = applyFocus('c1', undefined, 'again', T).next as CardFocusRow;
+    const once = applyFocus('c1', weak, 'good', T + 1);
+    expect(once.removed).toBe(false);
+    expect(once.next?.goodStreak).toBe(1);
+    expect(once.next?.weakCount).toBe(1); // 错误次数保留
+
+    const twice = applyFocus('c1', once.next ?? undefined, 'good', T + 2);
+    expect(twice.removed).toBe(true);
+    expect(twice.next).toBeNull();
+  });
+
+  it('再评「不会」会重置连续答对计数', () => {
+    const weak = applyFocus('c1', undefined, 'hard', T).next as CardFocusRow;
+    const once = applyFocus('c1', weak, 'good', T + 1).next as CardFocusRow;
+    const again = applyFocus('c1', once, 'again', T + 2);
+    expect(again.next?.goodStreak).toBe(0);
+    expect(again.next?.weakCount).toBe(2);
+  });
+
+  it('从没错过的卡评「会了」不会进专项', () => {
+    const result = applyFocus('c9', undefined, 'good', T);
+    expect(result.next).toBeNull();
+    expect(result.added).toBe(false);
+  });
+
+  it('focus 模式的队列只出专项里的卡，按错误次数从多到少', () => {
+    const cards = makeCards(6);
+    const mk = (id: string, weakCount: number): CardFocusRow => ({
+      cardId: id,
+      weakCount,
+      goodStreak: 0,
+      lastGrade: 'again',
+      firstWeakAt: T,
+      lastWeakAt: T,
+    });
+    const focus = new Map<string, CardFocusRow>([
+      ['c1', mk('c1', 1)],
+      ['c3', mk('c3', 5)],
+    ]);
+    const ids = buildQueue({
+      mode: 'focus',
+      cards,
+      srs: new Map(),
+      logs: [],
+      settings: SETTINGS,
+      focus,
+      now: T0,
+    });
+    expect(ids).toEqual(['c3', 'c1']);
   });
 });
 

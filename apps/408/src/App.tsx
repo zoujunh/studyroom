@@ -2,6 +2,7 @@ import { BottomNav } from './components/BottomNav';
 import { useRoute } from './lib/router';
 import { EssayPage } from './pages/Essay';
 import { EssayRunPage } from './pages/EssayRun';
+import { FocusPage } from './pages/Focus';
 import { HomePage } from './pages/Home';
 import { MistakesPage } from './pages/Mistakes';
 import { QuizPage } from './pages/Quiz';
@@ -52,6 +53,8 @@ export default function App() {
         return <EssayRunPage />;
       case '/mistakes':
         return <MistakesPage />;
+      case '/focus':
+        return <FocusPage />;
       case '/search':
         return <SearchPage />;
       case '/subjects':

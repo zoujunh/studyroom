@@ -141,12 +141,60 @@ export function newCardPriority(card: CardRow): number {
   return card.importance * 10;
 }
 
+/** 就地打乱（不依赖 queue.ts，避免循环引用）。 */
+function shuffleList<T>(list: T[]): T[] {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** 各科目轮流取一张，保证四科混着出现。 */
+function interleaveBySubject(cards: CardRow[]): CardRow[] {
+  const groups = new Map<string, CardRow[]>();
+  for (const card of cards) {
+    const list = groups.get(card.subject);
+    if (list) list.push(card);
+    else groups.set(card.subject, [card]);
+  }
+  const lists = [...groups.values()];
+  const out: CardRow[] = [];
+  let index = 0;
+  let hasMore = true;
+  while (hasMore) {
+    hasMore = false;
+    for (const list of lists) {
+      const card = list[index];
+      if (card) {
+        out.push(card);
+        hasMore = true;
+      }
+    }
+    index += 1;
+  }
+  return out;
+}
+
+/**
+ * 新卡顺序：考频降序 → 同考频内**按科目轮转 + 随机**。
+ *
+ * ⚠️ 这里曾经用 id 字母序做兜底，导致同考频的卡全是 `cn-`（计算机网络），
+ * 用户看到「怎么一直是计网的题」。修好后再也不会按科目扎堆。
+ */
 export function sortNewCards(cards: CardRow[]): CardRow[] {
-  return [...cards].sort((a, b) => {
-    const diff = newCardPriority(b) - newCardPriority(a);
-    if (diff !== 0) return diff;
-    return a.id.localeCompare(b.id);
-  });
+  const buckets = new Map<number, CardRow[]>();
+  for (const card of cards) {
+    const list = buckets.get(card.importance);
+    if (list) list.push(card);
+    else buckets.set(card.importance, [card]);
+  }
+  const out: CardRow[] = [];
+  for (const importance of [...buckets.keys()].sort((a, b) => b - a)) {
+    out.push(...interleaveBySubject(shuffleList(buckets.get(importance) as CardRow[])));
+  }
+  return out;
 }
 
 export function masteryStatusOf(cards: CardRow[], srs: Map<string, SrsRow>, status: MasteryStatus): CardRow[] {

@@ -9,7 +9,7 @@ export type Grade = 'again' | 'hard' | 'good' | 'easy';
 export type MasteryStatus = 'new' | 'learning' | 'mastered';
 
 /** 刷卡会话的来源模式。 */
-export type SessionMode = 'due' | 'new' | 'random' | 'subject' | 'chapter';
+export type SessionMode = 'due' | 'new' | 'random' | 'subject' | 'chapter' | 'focus';
 
 /** 一张知识卡的内容（由种子数据 / 导入数据提供）。 */
 export interface CardContent {
@@ -60,6 +60,8 @@ export interface LogRow {
   rating: number;
   prevState: SrsRow | null;
   nextState: SrsRow;
+  /** 评分前的复习专项状态（撤销时回滚用） */
+  prevFocus?: CardFocusRow | null;
   mode: SessionMode;
 }
 
@@ -139,6 +141,25 @@ export interface MistakeRow {
   lastErrorType: ErrorType | null;
   firstWrongAt: number;
   lastWrongAt: number;
+}
+
+/* ---------------- 复习专项（卡片级的薄弱项） ---------------- */
+
+/**
+ * 刷卡时评「不会 / 模糊」的卡片会进复习专项；连续评「会了」2 次自动移出。
+ * 它与 FSRS 调度是两件事：FSRS 决定「什么时候该复习」，
+ * 复习专项记录「这一轮里我明确没掌握的卡」，供集中突击。
+ */
+export interface CardFocusRow {
+  cardId: string;
+  /** 累计被评「不会 / 模糊」的次数 */
+  weakCount: number;
+  /** 连续评「会了」的次数，达到 2 次移出专项 */
+  goodStreak: number;
+  /** 最近一次评的档位 */
+  lastGrade: Grade;
+  firstWeakAt: number;
+  lastWeakAt: number;
 }
 
 /* ---------------- 综合应用题（M3+） ---------------- */

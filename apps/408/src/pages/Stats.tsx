@@ -4,13 +4,15 @@ import { Panel, Progress, SectionTitle, StatTile, cx } from '../components/ui';
 import { MASTERED_STABILITY_DAYS, SUBJECT_SCORE } from '../data/curriculum';
 import { dayKey, dueLabel } from '../lib/date';
 import { essayStats } from '../lib/essay';
+import { focusStats } from '../lib/focus';
 import { quizStats } from '../lib/quiz';
 import { navigate } from '../lib/router';
 import { bySubject, dailyStats, dueBuckets, overallCounts, reviewsOn, streakDays } from '../lib/stats';
 import { useStore } from '../state/store';
 
 export function StatsPage() {
-  const { cards, srs, logs, settings, questions, attempts, mistakes, essays, essayAttempts } = useStore();
+  const { cards, srs, logs, settings, questions, attempts, mistakes, essays, essayAttempts, cardFocus } =
+    useStore();
 
   const counts = useMemo(() => overallCounts(cards, srs), [cards, srs]);
   const subjects = useMemo(() => bySubject(cards, srs), [cards, srs]);
@@ -30,6 +32,7 @@ export function StatsPage() {
   );
   const maxError = Math.max(1, ...quiz.byError.map((item) => item.count));
   const essay = useMemo(() => essayStats(essays, essayAttempts), [essays, essayAttempts]);
+  const focus = useMemo(() => focusStats(cardFocus, cards), [cardFocus, cards]);
 
   return (
     <div className="px-4 pt-5 pb-6">
@@ -200,6 +203,39 @@ export function StatsPage() {
                 <span className="min-w-0 flex-1 text-[12px] leading-snug text-ink-2">{point.label}</span>
               </div>
             ))}
+          </Panel>
+        ) : null}
+      </section>
+
+      <section className="mt-5">
+        <SectionTitle
+          extra={
+            <button
+              type="button"
+              className="text-[11.5px] font-medium text-brand"
+              onClick={() => navigate('/focus')}
+            >
+              复习专项 →
+            </button>
+          }
+        >
+          复习专项（刷卡时评「不会 / 模糊」的卡）
+        </SectionTitle>
+        <div className="grid grid-cols-3 gap-2.5">
+          <StatTile label="待攻克" value={focus.total} sub="张卡片" />
+          <StatTile label="其中「模糊」" value={focus.hardOnly} sub="最近一次评分" />
+          <StatTile label="快毕业" value={focus.almostDone} sub="已答对 1 次" />
+        </div>
+        {focus.total > 0 ? (
+          <Panel className="mt-2.5 divide-y divide-line">
+            {focus.bySubject
+              .filter((item) => item.count > 0)
+              .map((item) => (
+                <div key={item.subject} className="flex items-center justify-between px-3.5 py-2.5">
+                  <span className="text-[13px]">{item.name}</span>
+                  <span className="text-[12.5px] text-ink-2">{item.count} 张</span>
+                </div>
+              ))}
           </Panel>
         ) : null}
       </section>

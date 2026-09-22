@@ -89,6 +89,7 @@ afterEach(async () => {
   await db.attempts.clear();
   await db.mistakes.clear();
   await db.essayAttempts.clear();
+  await db.cardFocus.clear();
   window.location.hash = '';
 });
 
@@ -127,7 +128,7 @@ describe('应用闭环', () => {
     expect(text).toContain('连续学习');
   });
 
-  it('刷卡页：看答案 → 评「会了」→ 写入 IndexedDB → 进度前进', async () => {
+  it('刷卡：评分后自动亮出答案 + 出现「下一题」，不自动跳走、本轮不重复', async () => {
     const el = await mount();
     await goTo('#/review?mode=due');
 
@@ -142,39 +143,76 @@ describe('应用闭环', () => {
     expect(el.textContent).toContain('记忆锚点');
 
     await pressKey({ key: '3' });
-    await settle(120);
+    await settle(150);
 
+    // 1) 落库
     const rows = await db.srs.toArray();
     expect(rows).toHaveLength(1);
     expect(rows[0].reps).toBe(1);
-    expect(rows[0].due).toBeGreaterThan(Date.now() - 60_000);
-
     const logs = await db.logs.toArray();
     expect(logs).toHaveLength(1);
     expect(logs[0].grade).toBe('good');
-    expect(logs[0].prevState).toBeNull();
 
-    // 新卡首评「会了」会进入 10 分钟学习步 → 本轮末尾重现，所以分母变成 21
-    expect(el.textContent).toContain('2 / 21');
+    // 2) 评分后：答案仍然亮着 + 出现「下一题」按钮 + 头部有已记录标记
+    expect(el.textContent).toContain('已记录「会了」');
+    expect(el.querySelector('[data-testid="next-card"]')).toBeTruthy();
+    expect(await db.cardFocus.count()).toBe(0); // 「会了」不进复习专项
+
+    // 3) 还没有跳走：还是同一张卡（分母不变，本轮不重复）
+    expect(el.textContent).toContain('1 / 20');
     expect(el.textContent).toContain('会了 1');
-    expect(rows[0].state).not.toBe(2);
+
+    // 4) 点「下一题」才前进
+    await clickTestId(el, 'next-card');
+    expect(el.textContent).toContain('2 / 20');
+    expect(el.textContent).toContain('点一下看答案'); // 新卡回到正面
   });
 
-  it('不打开答案也能直接评分，并且有可见的「存到哪」反馈', async () => {
+  it('不打开答案也能直接评分，评分后同样亮答案并给反馈', async () => {
     const el = await mount();
     await goTo('#/review?mode=due');
     expect(el.textContent).toContain('点一下看答案');
 
-    // 没看答案直接按 1：应当照样落库（三档按钮不再被锁死）
+    // 没看答案直接按 1：照样落库，并且会进复习专项
     await pressKey({ key: '1' });
-    await settle(120);
+    await settle(150);
 
     expect(await db.logs.count()).toBe(1);
     expect(el.textContent).toContain('不会 1');
-    // Toast + 头部常驻记录，两处都要能说明分数去哪了
-    expect(el.textContent).toContain('已记录到本机');
+    expect(el.textContent).toContain('已记录「不会」');
     expect(el.textContent).toContain('上次评「不会」');
-    expect(el.textContent).toContain('已存本机');
+    expect(el.textContent).toContain('已加入复习专项');
+
+    // 答案被自动亮出来（不用再点一次），并且有下一题按钮
+    expect(el.textContent).toContain('记忆锚点');
+    expect(el.querySelector('[data-testid="next-card"]')).toBeTruthy();
+
+    // 复习专项表里出现这张卡
+    const focus = await db.cardFocus.toArray();
+    expect(focus).toHaveLength(1);
+    expect(focus[0].weakCount).toBe(1);
+  });
+
+  it('评「不会」不会在本轮重复出现，撤销可以把这张卡退回来', async () => {
+    const el = await mount();
+    await goTo('#/review?mode=due');
+
+    await pressKey({ key: '1' });
+    await settle(150);
+    await clickTestId(el, 'next-card');
+    await settle(60);
+
+    // 本轮只在队列里出现过一次：分母还是 20（不会变成 21）
+    expect(el.textContent).toContain('2 / 20');
+    expect(el.textContent).not.toContain('/ 21');
+
+    // 撤销：回到刚才那张卡，并且记录被删掉
+    await pressKey({ key: 'z' });
+    await settle(150);
+    expect(el.textContent).toContain('1 / 20');
+    expect(await db.logs.count()).toBe(0);
+    expect(await db.srs.count()).toBe(0);
+    expect(await db.cardFocus.count()).toBe(0);
   });
 
   it('已复习过的卡片会显示复习次数与记忆稳定度', async () => {
@@ -208,22 +246,42 @@ describe('应用闭环', () => {
     expect(el.textContent).toContain(`共 ${expectedTotal} 张`);
   });
 
-  it('评「不会」会在同一轮里重现，并且可以撤销', async () => {
+  it('复习专项：评「不会」入库，连续两次「会了」自动移出', async () => {
     const el = await mount();
     await goTo('#/review?mode=due');
-    await pressKey({ code: 'Space', key: ' ' });
-    await pressKey({ key: '1' });
+
+    // 第一次：不会 → 进专项
+    await clickTestId(el, 'grade-again');
+    expect(await db.cardFocus.count()).toBe(1);
+    await clickTestId(el, 'next-card');
+
+    // 专项页能看到这张卡
+    await goTo('#/focus');
+    expect(el.textContent).toContain('复习专项');
+    expect(el.textContent).toContain('专项待攻克');
+    expect(el.textContent).toContain('错 1 次');
+
+    // 用「全部刷一遍」进专项会话
+    await clickTestId(el, 'focus-review-all');
+    await settle(120);
+    expect(el.textContent).toContain('复习专项');
+    expect(el.textContent).toContain('共 1 张');
+
+    // 第一次「会了」：仍在专项里（goodStreak = 1）
+    await clickTestId(el, 'grade-good');
+    let rows = await db.cardFocus.toArray();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].goodStreak).toBe(1);
+    await clickTestId(el, 'next-card');
     await settle(120);
 
-    // 不会 → 总题数 +1（本轮末尾重现）
-    expect(el.textContent).toContain('不会 1');
-    expect(el.textContent).toContain('/ 21');
-
-    await pressKey({ key: 'z' });
+    // 再刷一次专项，第二次「会了」→ 自动移出
+    await goTo('#/focus');
+    await clickTestId(el, 'focus-review-all');
     await settle(120);
-    expect(el.textContent).toContain('/ 20');
-    expect(await db.logs.count()).toBe(0);
-    expect(await db.srs.count()).toBe(0);
+    await clickTestId(el, 'grade-good');
+    expect(await db.cardFocus.count()).toBe(0);
+    expect(el.textContent).toContain('已从复习专项移出');
   });
 
   it('可视化页可以单步推进，并能切换算法', async () => {

@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   AttemptRow,
+  CardFocusRow,
   CardRow,
   EssayAttemptRow,
   EssayRow,
@@ -20,6 +21,7 @@ export class Kaoyan408Db extends Dexie {
   mistakes!: Table<MistakeRow, string>;
   essays!: Table<EssayRow, string>;
   essayAttempts!: Table<EssayAttemptRow, number>;
+  cardFocus!: Table<CardFocusRow, string>;
 
   constructor() {
     super('kaoyan408');
@@ -47,6 +49,18 @@ export class Kaoyan408Db extends Dexie {
       mistakes: 'questionId, lastWrongAt',
       essays: 'id, subject, chapter, difficulty',
       essayAttempts: '++id, essayId, ts',
+    });
+    // v4：加入复习专项（刷卡时评「不会/模糊」的卡片）
+    this.version(4).stores({
+      cards: 'id, subject, chapter, importance',
+      srs: 'cardId, due, state',
+      logs: '++id, cardId, ts',
+      questions: 'id, subject, chapter, type',
+      attempts: '++id, questionId, ts',
+      mistakes: 'questionId, lastWrongAt',
+      essays: 'id, subject, chapter, difficulty',
+      essayAttempts: '++id, essayId, ts',
+      cardFocus: 'cardId, lastWeakAt',
     });
   }
 }

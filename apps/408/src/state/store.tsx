@@ -14,10 +14,12 @@ import { questionRows } from '../data/question-seed';
 import { SEED_VERSION, seedRows } from '../data/seed';
 import { maxIntervalDays } from '../lib/date';
 import { essayFullScore } from '../lib/essay';
+import { applyFocus } from '../lib/focus';
 import { applyMistake, isCorrect } from '../lib/quiz';
 import { applyGrade } from '../srs/fsrs';
 import type {
   AttemptRow,
+  CardFocusRow,
   CardRow,
   ErrorType,
   EssayAttemptRow,
@@ -55,8 +57,14 @@ interface StoreValue {
   essays: EssayRow[];
   essayMap: Map<string, EssayRow>;
   essayAttempts: EssayAttemptRow[];
+  /** 复习专项：刷卡时评「不会 / 模糊」的卡片 */
+  cardFocus: Map<string, CardFocusRow>;
   updateSettings: (patch: Partial<Settings>) => void;
-  gradeCard: (cardId: string, grade: Grade, mode: SessionMode) => Promise<{ requeue: boolean; next: SrsRow }>;
+  gradeCard: (
+    cardId: string,
+    grade: Grade,
+    mode: SessionMode,
+  ) => Promise<{ requeue: boolean; next: SrsRow; focusAdded: boolean; focusRemoved: boolean }>;
   undo: () => Promise<LogRow | null>;
   refresh: () => Promise<void>;
   resetProgress: () => Promise<void>;
@@ -73,6 +81,8 @@ interface StoreValue {
   ) => Promise<AnswerResult>;
   tagErrorType: (questionId: string, errorType: ErrorType) => Promise<void>;
   dropMistake: (questionId: string) => Promise<void>;
+  /** 手动把一张卡移出复习专项 */
+  dropFocus: (cardId: string) => Promise<void>;
   recordEssay: (
     essayId: string,
     checked: number[],
@@ -111,6 +121,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [mistakes, setMistakes] = useState<Map<string, MistakeRow>>(new Map());
   const [essays, setEssays] = useState<EssayRow[]>([]);
   const [essayAttempts, setEssayAttempts] = useState<EssayAttemptRow[]>([]);
+  const [cardFocus, setCardFocus] = useState<Map<string, CardFocusRow>>(new Map());
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   // 供事件回调读取最新数据，避免把整个 map 塞进依赖数组
@@ -118,19 +129,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const essayMapRef = useRef<Map<string, EssayRow>>(new Map());
   const mistakesRef = useRef<Map<string, MistakeRow>>(new Map());
   const attemptsRef = useRef<AttemptRow[]>([]);
+  const focusRef = useRef<Map<string, CardFocusRow>>(new Map());
 
   const load = useCallback(async () => {
-    const [allCards, allSrs, allLogs, allQuestions, allAttempts, allMistakes, allEssays, allEssayAttempts] =
-      await Promise.all([
-        db.cards.toArray(),
-        db.srs.toArray(),
-        db.logs.orderBy('ts').reverse().limit(LOG_WINDOW).toArray(),
-        db.questions.toArray(),
-        db.attempts.orderBy('ts').reverse().limit(ATTEMPT_WINDOW).toArray(),
-        db.mistakes.toArray(),
-        db.essays.toArray(),
-        db.essayAttempts.orderBy('ts').reverse().limit(ATTEMPT_WINDOW).toArray(),
-      ]);
+    const [
+      allCards,
+      allSrs,
+      allLogs,
+      allQuestions,
+      allAttempts,
+      allMistakes,
+      allEssays,
+      allEssayAttempts,
+      allFocus,
+    ] = await Promise.all([
+      db.cards.toArray(),
+      db.srs.toArray(),
+      db.logs.orderBy('ts').reverse().limit(LOG_WINDOW).toArray(),
+      db.questions.toArray(),
+      db.attempts.orderBy('ts').reverse().limit(ATTEMPT_WINDOW).toArray(),
+      db.mistakes.toArray(),
+      db.essays.toArray(),
+      db.essayAttempts.orderBy('ts').reverse().limit(ATTEMPT_WINDOW).toArray(),
+      db.cardFocus.toArray(),
+    ]);
     setCards(allCards);
     setSrs(new Map(allSrs.map((row) => [row.cardId, row])));
     setLogs(allLogs.reverse());
@@ -139,6 +161,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setMistakes(new Map(allMistakes.map((row) => [row.questionId, row])));
     setEssays(allEssays);
     setEssayAttempts(allEssayAttempts.reverse());
+    setCardFocus(new Map(allFocus.map((row) => [row.cardId, row])));
   }, []);
 
   useEffect(() => {
@@ -206,6 +229,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         now,
         maxIntervalDays(config.examDate, now),
       );
+      const previousFocus = focusRef.current.get(cardId) ?? null;
       const log: LogRow = {
         cardId,
         ts: now.getTime(),
@@ -213,6 +237,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         rating: outcome.rating,
         prevState: prev,
         nextState: outcome.next,
+        prevFocus: previousFocus,
         mode,
       };
       const id = await db.logs.add(log);
@@ -223,7 +248,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
       setLogs((current) => [...current, { ...log, id }]);
-      return { requeue: outcome.requeue, next: outcome.next };
+
+      // 评「不会 / 模糊」→ 进复习专项；连续 2 次「会了」→ 自动移出
+      const prevFocus = previousFocus ?? undefined;
+      const focusUpdate = applyFocus(cardId, prevFocus, grade, now.getTime());
+      if (focusUpdate.next) await db.cardFocus.put(focusUpdate.next);
+      else if (prevFocus) await db.cardFocus.delete(cardId);
+      setCardFocus((current) => {
+        const next = new Map(current);
+        if (focusUpdate.next) next.set(cardId, focusUpdate.next);
+        else next.delete(cardId);
+        return next;
+      });
+
+      return {
+        requeue: outcome.requeue,
+        next: outcome.next,
+        focusAdded: focusUpdate.added,
+        focusRemoved: focusUpdate.removed,
+      };
     },
     [srs],
   );
@@ -240,6 +283,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       else next.delete(last.cardId);
       return next;
     });
+    // 回滚复习专项
+    if (last.prevFocus) await db.cardFocus.put(last.prevFocus);
+    else await db.cardFocus.delete(last.cardId);
+    setCardFocus((current) => {
+      const next = new Map(current);
+      if (last.prevFocus) next.set(last.cardId, last.prevFocus);
+      else next.delete(last.cardId);
+      return next;
+    });
     setLogs((current) => current.slice(0, -1));
     return last;
   }, [logs]);
@@ -251,12 +303,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       db.attempts.clear(),
       db.mistakes.clear(),
       db.essayAttempts.clear(),
+      db.cardFocus.clear(),
     ]);
     setSrs(new Map());
     setLogs([]);
     setAttempts([]);
     setMistakes(new Map());
     setEssayAttempts([]);
+    setCardFocus(new Map());
   }, []);
 
   const clearAll = useCallback(async () => {
@@ -284,11 +338,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         mistakes: [...mistakes.values()],
         essays,
         essayAttempts: essayAttempts.slice(-ATTEMPT_WINDOW),
+        cardFocus: [...cardFocus.values()],
       },
       null,
       2,
     );
-  }, [attempts, cards, essayAttempts, essays, logs, mistakes, questions, settings, srs]);
+  }, [attempts, cardFocus, cards, essayAttempts, essays, logs, mistakes, questions, settings, srs]);
 
   const importJSON = useCallback(
     async (text: string) => {
@@ -302,6 +357,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         mistakes?: MistakeRow[];
         essays?: EssayRow[];
         essayAttempts?: EssayAttemptRow[];
+        cardFocus?: CardFocusRow[];
         settings?: Partial<Settings>;
       };
       try {
@@ -323,6 +379,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (incomingAttempts.length) await db.attempts.bulkAdd(incomingAttempts);
       if (parsed.mistakes?.length) await db.mistakes.bulkPut(parsed.mistakes);
       if (parsed.essays?.length) await db.essays.bulkPut(parsed.essays);
+      if (parsed.cardFocus?.length) await db.cardFocus.bulkPut(parsed.cardFocus);
       if (parsed.essayAttempts?.length) {
         await db.essayAttempts.bulkAdd(
           parsed.essayAttempts.map(({ id: _id, ...rest }) => rest as EssayAttemptRow),
@@ -397,6 +454,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const dropFocus = useCallback(async (cardId: string) => {
+    await db.cardFocus.delete(cardId);
+    setCardFocus((current) => {
+      const next = new Map(current);
+      next.delete(cardId);
+      return next;
+    });
+  }, []);
+
   const recordEssay = useCallback(
     async (essayId: string, checked: number[], ms: number, mode: EssayMode) => {
       const essay = essayMapRef.current.get(essayId);
@@ -424,11 +490,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const cardMap = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
   const questionMap = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
-  const essayMap = useMemo(() => new Map(essays.map((e) => [e.id, e])), [essays]);
-  questionMapRef.current = questionMap;
+  const essayMap = useMemo(() => new Map(essays.map((e) => [e.id, e])), [essays]);  questionMapRef.current = questionMap;
   essayMapRef.current = essayMap;
   mistakesRef.current = mistakes;
   attemptsRef.current = attempts;
+  focusRef.current = cardFocus;
 
   const value = useMemo<StoreValue>(
     () => ({
@@ -447,6 +513,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       essays,
       essayMap,
       essayAttempts,
+      cardFocus,
       updateSettings,
       gradeCard,
       undo,
@@ -459,6 +526,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       answerQuestion,
       tagErrorType,
       dropMistake,
+      dropFocus,
       recordEssay,
     }),
     [
@@ -476,6 +544,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       essays,
       essayMap,
       essayAttempts,
+      cardFocus,
       updateSettings,
       gradeCard,
       undo,
@@ -488,6 +557,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       answerQuestion,
       tagErrorType,
       dropMistake,
+      dropFocus,
       recordEssay,
     ],
   );

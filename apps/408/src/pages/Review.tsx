@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { InlineMarkdown, Markdown } from '../components/Markdown';
+import { InlineMarkdown, Markdown, RichText } from '../components/Markdown';
 import { Icon } from '../components/icons';
 import { Button, Chip, Panel, Toast, cx } from '../components/ui';
 import { subjectMeta } from '../data/curriculum';
@@ -23,7 +23,7 @@ const GRADE_STYLE: Record<Grade, string> = {
 
 export function ReviewPage() {
   const route = useRoute();
-  const { ready, cards, cardMap, srs, logs, settings, lastLog, gradeCard, undo } = useStore();
+  const { ready, cards, cardMap, srs, logs, settings, cardFocus, lastLog, gradeCard, undo } = useStore();
 
   const mode = (route.query.get('mode') as SessionMode | null) ?? 'due';
   const subject = route.query.get('subject');
@@ -33,20 +33,23 @@ export function ReviewPage() {
   const [plannedTotal, setPlannedTotal] = useState(0);
   const [done, setDone] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  /** 本题已评的档位；非 null 表示「已记录，等下一题」 */
+  const [graded, setGraded] = useState<Grade | null>(null);
   const [tally, setTally] = useState<Record<Grade, number>>({ again: 0, hard: 0, good: 0, easy: 0 });
   const [toast, setToast] = useState<string | null>(null);
-  /** 上一张的评分结果，常驻显示在头部，让「分存到哪了」一眼可见。 */
   const [lastRecord, setLastRecord] = useState<{ grade: Grade; due: number } | null>(null);
   const startedAt = useRef(Date.now());
+  const questionStart = useRef(Date.now());
   const mainRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!ready || queue !== null) return;
-    const ids = buildQueue({ mode, cards, srs, logs, settings, subject, chapter });
+    const ids = buildQueue({ mode, cards, srs, logs, settings, subject, chapter, focus: cardFocus });
     setQueue(ids);
     setPlannedTotal(ids.length);
     startedAt.current = Date.now();
-    // 只在会话开始时构建一次队列。
+    questionStart.current = Date.now();
+    // 只在会话开始时构建一次队列（同一轮里每张卡只出现一次）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, queue, mode, subject, chapter]);
 
@@ -59,6 +62,7 @@ export function ReviewPage() {
   const currentId = queue && queue.length ? queue[0] : null;
   const card = currentId ? cardMap.get(currentId) : undefined;
   const row = currentId ? srs.get(currentId) ?? null : null;
+  const focusRow = currentId ? cardFocus.get(currentId) : undefined;
 
   const intervals = useMemo(() => {
     if (!card) return null;
@@ -74,28 +78,36 @@ export function ReviewPage() {
     }
   }, [card, row, settings.requestRetention, settings.examDate]);
 
+  /** 评分：只记录 + 立刻把答案亮出来 + 出现「下一题」，不自动跳走。 */
   const handleGrade = useCallback(
     async (grade: Grade) => {
-      if (!currentId) return;
-      const { requeue, next } = await gradeCard(currentId, grade, mode);
+      if (!currentId || graded) return;
+      const result = await gradeCard(currentId, grade, mode);
       setTally((t) => ({ ...t, [grade]: t[grade] + 1 }));
-      setLastRecord({ grade, due: next.due });
-      setToast(
-        `已记录到本机 · ${GRADE_LABEL[grade]} · ${
-          next.due <= Date.now() ? '本轮稍后重现' : `${dueLabel(next.due)}后复习`
-        }`,
-      );
-      setDone((d) => d + 1);
-      setFlipped(false);
-      setQueue((q) => {
-        if (!q) return q;
-        const [head, ...rest] = q;
-        return requeue ? [...rest, head] : rest;
-      });
-      mainRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
+      setLastRecord({ grade, due: result.next.due });
+      setGraded(grade);
+      setFlipped(true);
+      const when =
+        result.next.due <= Date.now() ? '稍后到期' : `${dueLabel(result.next.due)}后复习`;
+      const focusNote = result.focusAdded
+        ? '，已加入复习专项'
+        : result.focusRemoved
+          ? '，已从复习专项移出'
+          : '';
+      setToast(`已记录 · ${GRADE_LABEL[grade]} · ${when}${focusNote}`);
     },
-    [currentId, gradeCard, mode],
+    [currentId, graded, gradeCard, mode],
   );
+
+  const nextCard = useCallback(() => {
+    if (!queue || !queue.length) return;
+    setQueue((q) => (q ? q.slice(1) : q));
+    setDone((d) => d + 1);
+    setGraded(null);
+    setFlipped(false);
+    questionStart.current = Date.now();
+    mainRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
+  }, [queue]);
 
   const handleUndo = useCallback(async () => {
     const log = await undo();
@@ -103,39 +115,50 @@ export function ReviewPage() {
       setToast('没有可撤销的记录');
       return;
     }
-    setQueue((q) => (q ? [log.cardId, ...q.filter((id) => id !== log.cardId)] : q));
-    setDone((d) => Math.max(0, d - 1));
+    const wasCurrent = queue?.[0] === log.cardId;
+    setQueue((q) => {
+      if (!q) return q;
+      if (q[0] === log.cardId) return q;
+      return [log.cardId, ...q.filter((id) => id !== log.cardId)];
+    });
+    if (!wasCurrent) setDone((d) => Math.max(0, d - 1));
     setTally((t) => ({ ...t, [log.grade]: Math.max(0, t[log.grade] - 1) }));
+    setGraded(null);
     setFlipped(false);
     setToast('已撤销上一张');
-  }, [undo]);
+  }, [queue, undo]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+      if (event.key === 'Escape') {
+        back();
+        return;
+      }
       if (event.code === 'Space' || event.key === ' ') {
         event.preventDefault();
-        setFlipped((f) => !f);
+        if (graded) nextCard();
+        else setFlipped((f) => !f);
+        return;
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (graded) nextCard();
+        else void handleGrade('good');
         return;
       }
       if (event.key === '1') void handleGrade('again');
       else if (event.key === '2') void handleGrade('hard');
       else if (event.key === '3') void handleGrade('good');
       else if (event.key === 'z' || event.key === 'Z') void handleUndo();
-      else if (event.key === 'Escape') back();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleGrade, handleUndo]);
+  }, [graded, handleGrade, handleUndo, nextCard]);
 
-  // 进度按「本轮真实剩余」计算：短学习步内重现的卡会让分母变大，这样进度条不会骗人。
-  const remaining = queue?.length ?? 0;
-  const denominator = done + remaining;
-  const progressLabel = denominator
-    ? `${Math.min(done + 1, denominator)} / ${denominator}`
-    : `${done} / ${done}`;
-  const progressRatio = denominator ? done / denominator : 0;
+  const progressLabel = plannedTotal ? `${Math.min(done + 1, plannedTotal)} / ${plannedTotal}` : `${done} / ${done}`;
+  const progressRatio = plannedTotal ? done / plannedTotal : 0;
 
   const extendNewCards = () => {
     const fresh = sortNewCards(cards.filter((c) => statusOf(srs.get(c.id)) === 'new'));
@@ -174,7 +197,7 @@ export function ReviewPage() {
             {lastRecord ? (
               <div className="mt-0.5 text-[11px] text-brand-dark">
                 上次评「{GRADE_LABEL[lastRecord.grade]}」→{' '}
-                {lastRecord.due <= Date.now() ? '本轮稍后重现' : `${dueLabel(lastRecord.due)}后复习`}
+                {lastRecord.due <= Date.now() ? '稍后到期' : `${dueLabel(lastRecord.due)}后复习`}
                 <span className="text-ink-3">（已存本机）</span>
               </div>
             ) : null}
@@ -208,24 +231,22 @@ export function ReviewPage() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            // 只在「没看答案」时接管手势：看答案后必须把触摸还给页面滚动，
-            // 否则长答案没法往下翻（这是上一版的实际 bug）。
-            drag={!flipped}
+            // 评分后不再接管手势，方便滚动看答案
+            drag={!flipped && !graded}
             dragDirectionLock
             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
             dragElastic={0.18}
-            style={{ touchAction: flipped ? 'pan-y' : 'none' }}
+            style={{ touchAction: flipped || graded ? 'pan-y' : 'none' }}
             onTap={() => {
-              // 只看答案，绝不因为点击而收起——收起只能用「收起答案」按钮或空格键。
-              if (!flipped) setFlipped(true);
+              if (!flipped && !graded) setFlipped(true);
             }}
             onDragEnd={(_event, info) => {
-              if (flipped) return;
-              // 左右滑 / 上滑 都当作「看答案」，与提示文案一致。
+              if (flipped || graded) return;
               if (Math.abs(info.offset.x) > 60 || info.offset.y < -60) setFlipped(true);
             }}
           >
             <Panel className="px-4 py-4">
+              <span className="hidden" data-card-id={card.id} />
               <div className="flex flex-wrap items-center gap-1.5">
                 <Chip tone="brand">{subjectMeta(card.subject).name}</Chip>
                 <Chip>{card.chapter}</Chip>
@@ -233,6 +254,7 @@ export function ReviewPage() {
                 <Chip tone={card.importance >= 4 ? 'again' : 'neutral'}>
                   考频 {'★'.repeat(Math.max(1, Math.min(5, card.importance)))}
                 </Chip>
+                {focusRow ? <Chip tone="again">专项 · 错 {focusRow.weakCount} 次</Chip> : null}
               </div>
 
               {row && row.reps > 0 ? (
@@ -260,13 +282,19 @@ export function ReviewPage() {
                 >
                   <div className="mb-3 flex items-center gap-2">
                     <div className="h-px flex-1 bg-line" />
-                    <button
-                      type="button"
-                      onClick={() => setFlipped(false)}
-                      className="shrink-0 rounded-lg border border-line bg-surface-2 px-2 py-1 text-[11px] text-ink-3 active:bg-line"
-                    >
-                      收起答案
-                    </button>
+                    {!graded ? (
+                      <button
+                        type="button"
+                        onClick={() => setFlipped(false)}
+                        className="shrink-0 rounded-lg border border-line bg-surface-2 px-2 py-1 text-[11px] text-ink-3 active:bg-line"
+                      >
+                        收起答案
+                      </button>
+                    ) : (
+                      <span className="shrink-0 rounded-lg bg-brand-soft px-2 py-1 text-[11px] font-medium text-brand-dark">
+                        已记录「{GRADE_LABEL[graded]}」
+                      </span>
+                    )}
                   </div>
                   <Markdown source={card.back} />
                   {card.hint ? (
@@ -310,16 +338,27 @@ export function ReviewPage() {
                   </Button>
                   <Button onClick={extendNewCards}>再来 10 张新卡</Button>
                 </div>
+                {tally.again + tally.hard > 0 ? (
+                  <Button variant="ghost" className="mt-1" onClick={() => navigate('/focus')}>
+                    去复习专项刷这 {tally.again + tally.hard} 张
+                  </Button>
+                ) : null}
               </>
             ) : (
               <>
                 <div className="text-[15.5px] font-semibold">
-                  {mode === 'new' ? '今日新卡额度已用完' : '现在没有到期的卡片'}
+                  {mode === 'new'
+                    ? '今日新卡额度已用完'
+                    : mode === 'focus'
+                      ? '复习专项是空的'
+                      : '现在没有到期的卡片'}
                 </div>
                 <div className="text-[13px] leading-relaxed text-ink-3">
                   {mode === 'new'
                     ? `每天新卡上限是 ${settings.newPerDay} 张，可在设置里调整，或直接再加 10 张。`
-                    : '所有到期卡片都复习完了。可以随机刷卡保持手感，或去「设置」提高每日新卡上限。'}
+                    : mode === 'focus'
+                      ? '刷卡时评「不会 / 模糊」的卡片会自动进复习专项，连续两次「会了」自动移出。'
+                      : '所有到期卡片都复习完了。可以随机刷卡保持手感，或去「设置」提高每日新卡上限。'}
                 </div>
                 <div className="mt-2 grid w-full grid-cols-2 gap-2">
                   <Button variant="primary" onClick={extendNewCards}>
@@ -338,29 +377,43 @@ export function ReviewPage() {
 
       {card ? (
         <div className="shrink-0 border-t border-line bg-surface px-3 pt-2.5 pb-2.5">
-          <div className="grid grid-cols-3 gap-2">
-            {GRADES.map((grade) => (
-              <button
-                key={grade}
-                type="button"
-                onClick={() => void handleGrade(grade)}
-                className={cx(
-                  'flex flex-col items-center gap-1 rounded-xl border py-2.5 transition-all duration-100 active:scale-[0.97]',
-                  GRADE_STYLE[grade],
-                )}
-              >
-                <span className="text-[15px] font-semibold">{GRADE_LABEL[grade]}</span>
-                <span className="text-[10.5px] opacity-85">
-                  {flipped && intervals ? dueLabel(intervals[grade]) : GRADE_SUBLABEL[grade]}
-                </span>
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-center text-[11px] text-ink-3">
-            {flipped
-              ? '1/2/3 评分 · 括号里是下次复习时间 · 空格 收起答案 · Z 撤销'
-              : '1/2/3 可直接评分（没看答案也行）· 空格/点卡片 看答案 · Z 撤销'}
-          </p>
+          {graded ? (
+            <>
+              <Button variant="primary" block className="py-3 text-[15px]" data-testid="next-card" onClick={nextCard}>
+                {queue && queue.length <= 1 ? '完成本轮（Enter）' : '下一题（Enter）'}
+              </Button>
+              <p className="mt-2 text-center text-[11px] text-ink-3">
+                上面是这张卡的答案 · <RichText source={'Z 撤销'} /> 可改判 · 本轮不会再重复出现这张卡
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                {GRADES.map((grade) => (
+                  <button
+                    key={grade}
+                    type="button"
+                    data-testid={`grade-${grade}`}
+                    onClick={() => void handleGrade(grade)}
+                    className={cx(
+                      'flex flex-col items-center gap-1 rounded-xl border py-2.5 transition-all duration-100 active:scale-[0.97]',
+                      GRADE_STYLE[grade],
+                    )}
+                  >
+                    <span className="text-[15px] font-semibold">{GRADE_LABEL[grade]}</span>
+                    <span className="text-[10.5px] opacity-85">
+                      {flipped && intervals ? dueLabel(intervals[grade]) : GRADE_SUBLABEL[grade]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-center text-[11px] text-ink-3">
+                {flipped
+                  ? '1/2/3 评分 · 括号里是下次复习时间 · 空格 收起答案'
+                  : '1/2/3 可直接评分（没看答案也行）· 空格/点卡片 看答案'}
+              </p>
+            </>
+          )}
         </div>
       ) : null}
 

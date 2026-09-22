@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Icon, type IconName } from '../components/icons';
 import { Button, Chip, Panel, Progress, Ring, SectionTitle, StatTile, cx } from '../components/ui';
 import { daysUntilExam } from '../lib/date';
+import { focusStats } from '../lib/focus';
 import { navigate } from '../lib/router';
 import { planSprint, sprintAdvice } from '../lib/sprint';
 import { bySubject, overallCounts, streakDays, todayQuota } from '../lib/stats';
@@ -45,12 +46,13 @@ interface QuickAction {
 }
 
 export function HomePage() {
-  const { cards, srs, logs, settings, storageOk, updateSettings } = useStore();
+  const { cards, srs, logs, settings, storageOk, updateSettings, cardFocus, mistakes } = useStore();
 
   const counts = useMemo(() => overallCounts(cards, srs), [cards, srs]);
   const subjects = useMemo(() => bySubject(cards, srs), [cards, srs]);
   const quota = useMemo(() => todayQuota(cards, srs, logs, settings), [cards, srs, logs, settings]);
   const streak = useMemo(() => streakDays(logs), [logs]);
+  const focus = useMemo(() => focusStats(cardFocus, cards), [cardFocus, cards]);
   const plan = useMemo(
     () => planSprint(cards, srs, settings, quota.due, quota.newRemaining),
     [cards, srs, settings, quota.due, quota.newRemaining],
@@ -65,9 +67,9 @@ export function HomePage() {
     { label: '我的科目', sub: '按章节查看', icon: 'book', to: '/subjects' },
     { label: '可视化', sub: '排序 / 置换 / TCP', icon: 'layers', to: '/visual' },
     { label: '题库刷题', sub: '单选 / 判断', icon: 'check', to: '/quiz' },
-    { label: '错题本', sub: '按错因归类', icon: 'undo', to: '/mistakes' },
+    { label: '复习专项', sub: `${focus.total} 张待攻克`, icon: 'sparkle', to: '/focus' },
+    { label: '错题本', sub: '选择题按错因', icon: 'undo', to: '/mistakes' },
     { label: '全局搜索', sub: '卡片 / 题目 / 大题', icon: 'search', to: '/search' },
-    { label: '学习统计', sub: '掌握率与趋势', icon: 'chart', to: '/stats' },
   ];
 
   return (
@@ -130,6 +132,14 @@ export function HomePage() {
             <div className="mt-1.5 flex items-center gap-1 text-[12px] font-medium text-hard">
               <Icon name="flame" size={14} filled />
               连续学习 {streak} 天
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]">
+              <button type="button" className="text-brand" onClick={() => navigate('/focus')}>
+                复习专项 <span className="font-semibold">{focus.total}</span> 张
+              </button>
+              <button type="button" className="text-brand" onClick={() => navigate('/mistakes')}>
+                错题本 <span className="font-semibold">{mistakes.size}</span> 道
+              </button>
             </div>
           </div>
         </div>
